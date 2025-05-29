@@ -25,3 +25,4 @@ import CombinatorialGames.Surreal.Ordinal
 import CombinatorialGames.Surreal.Real
 import CombinatorialGames.Surreal.Sign
 import CombinatorialGames.Test
+import CombinatorialGames.Misere
