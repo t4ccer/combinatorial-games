@@ -55,16 +55,14 @@ def MisereGe (g h : IGame) : Prop := ∀ (x : IGame), MisereOutcome (g + x) ≥ 
 theorem Outcome.ge_R (o : Outcome) : o ≥ Outcome.R := by
   simp only [ge_iff_le]
   unfold LE.le
-  simp [instLEOutcome]
   cases o
-  all_goals simp [Outcome.le', Outcome.lt']
+  all_goals simp [instLEOutcome, Outcome.le', Outcome.lt']
 
 theorem Outcome.L_ge (o : Outcome) : Outcome.L ≥ o := by
   simp only [ge_iff_le]
   unfold LE.le
-  simp [instLEOutcome]
   cases o
-  all_goals simp [Outcome.le', Outcome.lt']
+  all_goals simp [instLEOutcome, Outcome.le', Outcome.lt']
 
 theorem Outcome.ge_PN {o : Outcome} (hp : o ≥ Outcome.P) (hn : o ≥ Outcome.N) : o = Outcome.L := by
   cases o
@@ -109,4 +107,4 @@ decreasing_by igame_wf
 
 theorem Adjont_zero_def : Adjoint 0 = {{⋆}|{⋆}}ᴵ := by
   unfold Adjoint
-  simp only [↓reduceIte]
+  simp only [reduceIte]
