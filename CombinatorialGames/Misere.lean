@@ -158,7 +158,9 @@ noncomputable def Adjoint (g : IGame) : IGame :=
 termination_by g
 decreasing_by igame_wf
 
-theorem Adjont_zero_def : Adjoint 0 = {{⋆}|{⋆}}ᴵ := by
+notation g"°" => Adjoint g
+
+theorem Adjont_zero_def : 0° = {{⋆}|{⋆}}ᴵ := by
   unfold Adjoint
   simp only [reduceIte]
 
@@ -168,18 +170,18 @@ theorem leftEmtpy_rightEmtpy_zero {g : IGame} (hl : g.leftMoves = ∅) (hr : g.r
   · simp [hl]
   · simp [hr]
 
-theorem proposition6_4 {g : IGame} : MisereOutcome (g + Adjoint g) = Outcome.P := by
+theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
   unfold MisereOutcome
   unfold PlayerOutcomesToGameOutcome
   -- FIXME: Comments and code are backwards
-  have h1 : MisereOutcomeL (g + Adjoint g) = PlayerOutcome.R := by
+  have h1 : MisereOutcomeL (g + g°) = PlayerOutcome.R := by
     unfold MisereOutcomeL
-    have h2 : ¬(MisereOutcomeL_isL (g + Adjoint g)) := by
+    have h2 : ¬(MisereOutcomeL_isL (g + g°)) := by
       unfold MisereOutcomeL_isL
       simp
       constructor
-      · -- Now G + Adjoint G cannot be a Right end, since the definition of
-        -- Adjoint G ensures that it has at least one Right option
+      · -- Now G + G° cannot be a Right end, since the definition of
+        -- G° ensures that it has at least one Right option
         intro h3
         unfold Adjoint
         simp [h3]
@@ -191,15 +193,16 @@ theorem proposition6_4 {g : IGame} : MisereOutcome (g + Adjoint g) = Outcome.P :
       · intro k h3
         -- So it suffices to show that Left has a winning response to every move by Right.
         -- There are two cases:
-        -- If Right moves to G^R + Adjoint G or G + Adjont (G^L), Left has a mirror image move on
+        -- If Right moves to G^R + G° or G + (G^L)°, Left has a mirror image move on
         -- the other component, which wins by induction on G.
         apply Or.elim h3
           <;> intro h4
           <;> obtain ⟨gl, ⟨h4, h5⟩⟩ := h4
           <;> rw [<-h5]
-        · -- Show that G^L + Adjoint G is in R if Right goes first
+        · -- Show that G^L + G° is in R if Right goes first
           sorry
-        · -- Show that G + (Adjoint G)^L is in R if Right goes first
+        · -- Show that G + (G°)^L is in R if Right goes first
+
           sorry
     simp [h2]
   have h2 : MisereOutcomeR (g + Adjoint g) = PlayerOutcome.L := by
