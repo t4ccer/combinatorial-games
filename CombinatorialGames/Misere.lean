@@ -195,14 +195,16 @@ theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
         -- There are two cases:
         -- If Right moves to G^R + G° or G + (G^L)°, Left has a mirror image move on
         -- the other component, which wins by induction on G.
+        induction g using IGame.moveRecOn with
+        | H g h6 h7 =>
         apply Or.elim h3
-          <;> intro h4
-          <;> obtain ⟨gl, ⟨h4, h5⟩⟩ := h4
+          <;> intro ⟨gl, ⟨h4, h5⟩⟩
           <;> rw [<-h5]
+          <;> rw [<-h5] at h6
         · -- Show that G^L + G° is in R if Right goes first
+          apply h6 gl h4
           sorry
         · -- Show that G + (G°)^L is in R if Right goes first
-
           sorry
     simp [h2]
   have h2 : MisereOutcomeR (g + Adjoint g) = PlayerOutcome.L := by
