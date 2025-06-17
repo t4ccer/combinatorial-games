@@ -147,11 +147,9 @@ theorem proposition6_1 (g h : IGame) :
       have h6 := Outcome.ge_PN h4 h5
       exact le_of_eq (Eq.symm h6)
 
+open Classical in
 noncomputable def Adjoint (g : IGame) : IGame :=
-  have _ := Classical.propDecidable (g = 0)
-  have _ := Classical.propDecidable (g.leftMoves = ∅)
-  have _ := Classical.propDecidable (g.rightMoves = ∅)
-  if g = (0 : IGame) then {{⋆}|{⋆}}ᴵ
+  if g = (0 : IGame) then ⋆
   else if g.leftMoves = ∅ then {Set.range fun gr : g.rightMoves => Adjoint gr|{0}}ᴵ
   else if g.rightMoves = ∅ then {{0}|Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ
   else {Set.range fun gr : g.rightMoves => Adjoint gr|Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ
@@ -160,7 +158,7 @@ decreasing_by igame_wf
 
 notation g"°" => Adjoint g
 
-theorem Adjont_zero_def : 0° = {{⋆}|{⋆}}ᴵ := by
+theorem Adjont_zero_def : 0° = ⋆ := by
   unfold Adjoint
   simp only [reduceIte]
 
@@ -170,44 +168,74 @@ theorem leftEmtpy_rightEmtpy_zero {g : IGame} (hl : g.leftMoves = ∅) (hr : g.r
   · simp [hl]
   · simp [hr]
 
+theorem nonEmpty_Adjoint_right (g : IGame) : g°.rightMoves ≠ ∅ := by
+  unfold Adjoint
+  by_cases h1 : g = 0 <;> simp [h1]
+  by_cases h2 : g.leftMoves = ∅ <;> simp [h2]
+  by_cases h3 : g.rightMoves = ∅ <;> simp [h3, h2]
+
+theorem nonEmpty_Adjoint_left (g : IGame) : g°.leftMoves ≠ ∅ := by
+  unfold Adjoint
+  by_cases h1 : g = 0 <;> simp [h1]
+  by_cases h2 : g.leftMoves = ∅ <;> by_cases h3 : g.rightMoves = ∅ <;> simp [h2, h3]
+  exact h1 (leftEmtpy_rightEmtpy_zero h2 h3)
+
+theorem rightMoves_of_Adjoint_of_leftEnd {g : IGame} (h : g.leftMoves = ∅) : g°.rightMoves = {0} := by
+  unfold Adjoint
+  by_cases h1 : g = 0 <;> simp [h, h1]
+
+theorem MisereOutcomeL_isL_of_leftEnd {g : IGame} (h : g.leftMoves = ∅) : MisereOutcomeL_isL g := by
+  unfold MisereOutcomeL_isL
+  exact Or.symm (Or.inr h)
+
 theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
   unfold MisereOutcome
   unfold PlayerOutcomesToGameOutcome
-  -- FIXME: Comments and code are backwards
-  have h1 : MisereOutcomeL (g + g°) = PlayerOutcome.R := by
+  -- By symmetry, it suffices to show that Left can win G + G° playing second
+  have h1 : MisereOutcomeR (g + Adjoint g) = PlayerOutcome.L := by
+    unfold MisereOutcomeR
+    have h1 : ¬(MisereOutcomeR_isR (g + g°)) := by
+      unfold MisereOutcomeR_isR
+      simp
+      constructor
+      · -- Now G + G° cannot be a Right end, since the definition of
+        -- G° ensures that it has at least one Right option
+        exact fun _ => nonEmpty_Adjoint_right g
+      · intro k h1
+        -- So it suffices to show that Left has a winning response to every move by Right.
+        -- There are two cases:
+        by_cases h2 : g.leftMoves = ∅
+        · -- If G is a Left end and Right moves to G + 0, then Left has no move and so wins a priori.
+          apply Or.elim h1 <;> intro ⟨gr, ⟨h3, h4⟩⟩ <;> rw [<-h4] <;> clear h1 h4 k
+          · -- The same recursion as in the other branch of h2 maybe?
+            sorry
+          · simp [rightMoves_of_Adjoint_of_leftEnd h2] at h3
+            rw [h3, add_zero]
+            clear h3
+            exact MisereOutcomeL_isL_of_leftEnd h2
+        · -- If Right moves to G^R + G° or G + (G^L)°, Left has a mirror image move on
+          -- the other component, which wins by induction on G.
+          induction g using IGame.moveRecOn with
+          | H g h6 h7 =>
+          apply Or.elim h1
+            <;> intro ⟨gl, ⟨h4, h5⟩⟩
+            <;> rw [<-h5]
+            <;> rw [<-h5] at h6
+          · -- Show that G^L + G° is in R if Right goes first
+            sorry
+          · -- Show that G + (G°)^L is in R if Right goes first
+            sorry
+    simp [h1]
+
+  -- "By symmetry" part
+  have h2 : MisereOutcomeL (g + g°) = PlayerOutcome.R := by
     unfold MisereOutcomeL
     have h2 : ¬(MisereOutcomeL_isL (g + g°)) := by
       unfold MisereOutcomeL_isL
       simp
       constructor
-      · -- Now G + G° cannot be a Right end, since the definition of
-        -- G° ensures that it has at least one Right option
-        intro h3
-        unfold Adjoint
-        simp [h3]
-        by_cases h5 : g = 0
-        · simp [h5]
-        · simp [h5]
-          intro h6
-          exact h5 (leftEmtpy_rightEmtpy_zero h3 h6)
+      · exact fun _ => nonEmpty_Adjoint_left g
       · intro k h3
-        -- So it suffices to show that Left has a winning response to every move by Right.
-        -- There are two cases:
-        -- If Right moves to G^R + G° or G + (G^L)°, Left has a mirror image move on
-        -- the other component, which wins by induction on G.
-        induction g using IGame.moveRecOn with
-        | H g h6 h7 =>
-        apply Or.elim h3
-          <;> intro ⟨gl, ⟨h4, h5⟩⟩
-          <;> rw [<-h5]
-          <;> rw [<-h5] at h6
-        · -- Show that G^L + G° is in R if Right goes first
-          apply h6 gl h4
-          sorry
-        · -- Show that G + (G°)^L is in R if Right goes first
-          sorry
+        sorry
     simp [h2]
-  have h2 : MisereOutcomeR (g + Adjoint g) = PlayerOutcome.L := by
-    -- TODO: By symmetry
-    sorry
   simp [h1, h2]
