@@ -165,8 +165,8 @@ theorem Adjont_zero_def : 0° = ⋆ := by
 theorem leftEmtpy_rightEmtpy_zero {g : IGame} (hl : g.leftMoves = ∅) (hr : g.rightMoves = ∅) : g = 0 := by
   rw [IGame.zero_def]
   ext
-  · simp [hl]
-  · simp [hr]
+  · simp only [hl, Set.mem_empty_iff_false, IGame.leftMoves_ofSets]
+  · simp only [hr, Set.mem_empty_iff_false, IGame.rightMoves_ofSets]
 
 theorem nonEmpty_Adjoint_right (g : IGame) : g°.rightMoves ≠ ∅ := by
   unfold Adjoint
@@ -188,6 +188,9 @@ theorem MisereOutcomeL_isL_of_leftEnd {g : IGame} (h : g.leftMoves = ∅) : Mise
   unfold MisereOutcomeL_isL
   exact Or.symm (Or.inr h)
 
+theorem leftMoves_ne_empty_mem {g : IGame} (h : g.leftMoves ≠ ∅) : ∃gl, (gl ∈ g.leftMoves) :=
+  Set.nonempty_iff_ne_empty.mpr h
+
 theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
   unfold MisereOutcome
   unfold PlayerOutcomesToGameOutcome
@@ -208,7 +211,10 @@ theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
         · -- If G is a Left end and Right moves to G + 0, then Left has no move and so wins a priori.
           apply Or.elim h1 <;> intro ⟨gr, ⟨h3, h4⟩⟩ <;> rw [<-h4] <;> clear h1 h4 k
           · -- The same recursion as in the other branch of h2 maybe?
-            sorry
+            induction (gr + g) using IGame.moveRecOn with
+            | H g h4 h5 =>
+
+              sorry
           · simp [rightMoves_of_Adjoint_of_leftEnd h2] at h3
             rw [h3, add_zero]
             clear h3
@@ -218,10 +224,13 @@ theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
           induction g using IGame.moveRecOn with
           | H g h6 h7 =>
           apply Or.elim h1
-            <;> intro ⟨gl, ⟨h4, h5⟩⟩
+            <;> intro ⟨gr, ⟨h4, h5⟩⟩
             <;> rw [<-h5]
             <;> rw [<-h5] at h6
+            <;> rw [<-h5] at h7
           · -- Show that G^L + G° is in R if Right goes first
+            clear h1 h5 k
+            obtain ⟨gl, h8⟩ := leftMoves_ne_empty_mem h2
             sorry
           · -- Show that G + (G°)^L is in R if Right goes first
             sorry
@@ -239,3 +248,25 @@ theorem proposition6_4 {g : IGame} : MisereOutcome (g + g°) = Outcome.P := by
         sorry
     simp [h2]
   simp [h1, h2]
+
+theorem ne_zero_leftEnd_or_rightEnd {g : IGame} (h1 : g ≠ 0) : g.leftMoves ≠ ∅ ∨ g.rightMoves ≠ ∅ := by
+  by_contra h2
+  simp only [ne_eq, not_or, not_not] at h2
+  obtain ⟨h2, h3⟩ := h2
+  exact h1 (leftEmtpy_rightEmtpy_zero h2 h3)
+
+theorem not_MisereEq_of_not_MisereGe {g h : IGame} (h1 : ¬MisereGe g h) : ¬MisereEq g h := by
+  simp only [MisereGe, ge_iff_le, not_forall] at h1
+  obtain ⟨x, h1⟩ := h1
+  simp only [MisereEq, not_forall]
+  use x
+  refine Ne.symm (ne_of_not_le h1)
+
+theorem theorem6_6 {g h : IGame} (h1 : h.leftMoves = ∅) (h2 : g.leftMoves ≠ ∅) : ¬MisereGe g h := by
+  sorry
+
+theorem corollary6_7 {g : IGame} (h1 : g ≠ 0) : ¬(MisereEq g 0) := by
+  apply Or.elim (ne_zero_leftEnd_or_rightEnd h1) <;> intro h2
+  · refine not_MisereEq_of_not_MisereGe (theorem6_6 IGame.leftMoves_zero h2)
+  · -- TODO: Right end variant of theorem6_6 and by symmetry
+    sorry
