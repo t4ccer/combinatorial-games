@@ -10,20 +10,43 @@ inductive PlayerOutcome where
 
 mutual
 
-def MisereOutcomeL_isL (g : IGame): Prop :=
-  IGame.leftMoves g = ∅ ∨ (∃ gl ∈ g.leftMoves, ¬MisereOutcomeR_isR gl)
+def MisereOutcomeL_isL (g : IGame) : Prop :=
+  IGame.leftMoves g = ∅ ∨ ¬(∀ gl ∈ g.leftMoves, MisereOutcomeR_isR gl)
 termination_by g
-decreasing_by
-  -- TODO: Do something so we can see here that gl ∈ g.leftMoves
-  sorry
+decreasing_by igame_wf
 
 def MisereOutcomeR_isR (g : IGame) : Prop :=
-  IGame.rightMoves g = ∅ ∨ (∃ gr ∈ g.rightMoves, ¬MisereOutcomeL_isL gr)
+  IGame.rightMoves g = ∅ ∨ ¬(∀ gr ∈ g.rightMoves, MisereOutcomeL_isL gr)
 termination_by g
-decreasing_by
-  sorry
+decreasing_by igame_wf
 
 end
+
+theorem MisereOutcomeL_isL_def {g : IGame}
+    : MisereOutcomeL_isL g ↔ (IGame.leftMoves g = ∅ ∨ (∃ gl ∈ g.leftMoves, ¬MisereOutcomeR_isR gl)) := by
+  constructor <;> intro h1
+  · simp only [MisereOutcomeL_isL, not_forall] at h1
+    apply Or.elim h1 <;> intro h2
+    · exact Or.inl h2
+    · exact Or.inr (bex_def.mp h2)
+  · unfold MisereOutcomeL_isL
+    simp only [not_forall]
+    apply Or.elim h1 <;> intro h2
+    · exact Or.inl h2
+    · refine Or.inr (bex_def.mpr h2)
+
+theorem MisereOutcomeR_isR_def {g : IGame}
+    : MisereOutcomeR_isR g ↔ (IGame.rightMoves g = ∅ ∨ (∃ gr ∈ g.rightMoves, ¬MisereOutcomeL_isL gr)) := by
+  constructor <;> intro h1
+  · simp only [MisereOutcomeR_isR, not_forall] at h1
+    apply Or.elim h1 <;> intro h2
+    · exact Or.inl h2
+    · exact Or.inr (bex_def.mp h2)
+  · unfold MisereOutcomeR_isR
+    simp only [not_forall]
+    apply Or.elim h1 <;> intro h2
+    · exact Or.inl h2
+    · refine Or.inr (bex_def.mpr h2)
 
 open Classical in
 /-- Game outcome if Left goes first -/
@@ -201,7 +224,7 @@ theorem proposition6_4 (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
   have h1 : MisereOutcomeR (g + Adjoint g) = PlayerOutcome.L := by
     unfold MisereOutcomeR
     have h1 : ¬(MisereOutcomeR_isR (g + g°)) := by
-      unfold MisereOutcomeR_isR
+      rw [MisereOutcomeR_isR_def]
       simp
       constructor
       · -- Now G + G° cannot be a Right end, since the definition of
@@ -242,7 +265,7 @@ theorem proposition6_4 (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
   have h2 : MisereOutcomeL (g + g°) = PlayerOutcome.R := by
     unfold MisereOutcomeL
     have h2 : ¬(MisereOutcomeL_isL (g + g°)) := by
-      unfold MisereOutcomeL_isL
+      rw [MisereOutcomeL_isL_def]
       simp
       refine And.intro (fun _ => nonEmpty_Adjoint_left g) ?_
       intro k h3
@@ -285,7 +308,7 @@ theorem left_in_P_in_LL {g gl : IGame} (h1 : gl ∈ g.leftMoves) (h2 : MisereOut
   unfold MisereOutcomeL at h2
   unfold MisereOutcomeR at h2
   by_cases h3 : MisereOutcomeL_isL gl <;> by_cases h4 : MisereOutcomeR_isR gl <;> simp [h3, h4] at h2
-  unfold MisereOutcomeL_isL
+  rw [MisereOutcomeL_isL_def]
   refine Or.inr ?_
   use gl
 
@@ -296,7 +319,7 @@ theorem right_in_P_in_RR {g gr : IGame} (h1 : gr ∈ g.rightMoves) (h2 : MisereO
   unfold MisereOutcomeL at h2
   unfold MisereOutcomeR at h2
   by_cases h3 : MisereOutcomeR_isR gr <;> by_cases h4 : MisereOutcomeL_isL gr <;> simp [h3, h4] at h2
-  unfold MisereOutcomeR_isR
+  rw [MisereOutcomeR_isR_def]
   refine Or.inr ?_
   use gr
 
@@ -368,21 +391,21 @@ theorem theorem6_6 {g h : IGame} (h1 : h.leftMoves = ∅) (h2 : g.leftMoves ≠ 
   -- Next consider G + T
   have h4 : MisereOutcome (g + t) ≤ Outcome.N := by
     apply le_N_Right_wins_first
-    unfold MisereOutcomeR_isR
+    rw [MisereOutcomeR_isR_def]
     apply Or.inr
     -- Right has a move to G + { | (G^L)° }
     use (g + {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ)
     constructor
     · refine IGame.add_left_mem_rightMoves_add ?_ g
       simp only [IGame.rightMoves_ofSets, Set.mem_singleton_iff, t]
-    · unfold MisereOutcomeL_isL
+    · rw [MisereOutcomeL_isL_def]
       simp only [IGame.leftMoves_add, IGame.leftMoves_ofSets, Set.image_empty, Set.union_empty,
                  Set.image_eq_empty, Set.mem_image, exists_exists_and_eq_and, not_or, not_exists,
                  not_and, not_not, t]
       apply And.intro h2
       intro gl h4
       -- from which Left's only options have the form G^L + { | (G^L)° }
-      unfold MisereOutcomeR_isR
+      rw [MisereOutcomeR_isR_def]
       apply Or.inr
       -- There must be at least one such option, by the assumption on G;
       -- and each such option has a mirror-image response by Right, to G^L + (G^L)°
@@ -398,7 +421,7 @@ theorem theorem6_6 {g h : IGame} (h1 : h.leftMoves = ∅) (h2 : g.leftMoves ≠ 
   cases h7 : MisereOutcome (g + t)
   all_goals simp [h7, instLEOutcome, Outcome.le', Outcome.lt'] at h4 h6
 
--- Manual version of theorem6_6'' to not use sorry cause I can't prove MisereEq_neg rn
+-- Manual version of theorem6_6'' to not use sorry cause I can't prove `MisereEq_negAux` rn
 theorem theorem6_6' {g h : IGame} (h1 : h.rightMoves = ∅) (h2 : g.rightMoves ≠ ∅) : ¬MisereGe h g := by
   let t := { { { Set.range fun gr : g.rightMoves => Adjoint gr | ∅ }ᴵ } | Set.range fun hl : h.leftMoves => Adjoint hl }ᴵ
   have h3 : MisereOutcome (h + t) ≤ Outcome.P := by
@@ -420,19 +443,19 @@ theorem theorem6_6' {g h : IGame} (h1 : h.rightMoves = ∅) (h2 : g.rightMoves �
       simp only [h3, IGame.rightMoves_ofSets, t]
   have h4 : MisereOutcome (g + t) ≥ Outcome.N := by
     apply ge_N_Left_wins_first
-    unfold MisereOutcomeL_isL
+    rw [MisereOutcomeL_isL_def]
     apply Or.inr
     use (g + { Set.range fun gr : g.rightMoves => Adjoint gr | ∅ }ᴵ)
     constructor
     · refine IGame.add_left_mem_leftMoves_add ?_ g
       simp only [IGame.leftMoves_ofSets, Set.mem_singleton_iff, t]
-    · unfold MisereOutcomeR_isR
+    · rw [MisereOutcomeR_isR_def]
       simp only [IGame.rightMoves_add, IGame.rightMoves_ofSets, Set.image_empty, Set.union_empty,
                  Set.image_eq_empty, Set.mem_image, exists_exists_and_eq_and, not_or, not_exists,
                  not_and, not_not, t]
       apply And.intro h2
       intro gr h4
-      unfold MisereOutcomeL_isL
+      rw [MisereOutcomeL_isL_def]
       apply Or.inr
       use (gr + gr°)
       refine And.intro ?_ (P_ne_RR (proposition6_4 gr))
