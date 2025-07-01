@@ -330,7 +330,23 @@ theorem mem_right_adjoint_exists_left {g gr : IGame}
     simp [h3] at h2
   by_cases h3 : g.rightMoves = ∅
   all_goals
-  · simp[*] at h1
+  · simp only [*, reduceIte, IGame.rightMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop] at h1
+    obtain ⟨x, h2, h3⟩ := h1
+    use x
+    apply And.intro h2
+    exact Eq.symm h3
+
+theorem mem_left_adjoint_exists_right {g gl : IGame}
+  (h1 : gl ∈ g°.leftMoves) (h2 : ¬(IsRightEnd g))
+    : ∃ gr ∈ g.rightMoves, gl = gr° := by
+  unfold Adjoint IsLeftEnd IsRightEnd at h1
+  unfold IsRightEnd at h2
+  have h2 : g ≠ 0 := by
+    intro h3
+    simp [h3] at h2
+  by_cases h3 : g.leftMoves = ∅
+  all_goals
+  · simp [*, reduceIte, IGame.leftMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop] at h1
     obtain ⟨x, h2, h3⟩ := h1
     use x
     apply And.intro h2
@@ -354,13 +370,12 @@ theorem proposition6_4 (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
       · intro k h1
         -- So it suffices to show that Left has a winning response to every move by Right.
         apply Or.elim h1 <;> intro ⟨gr, h2, h3⟩ <;> rw [<-h3] <;> clear h1 h3 k
-        · have h5 : gr° ∈ g°.leftMoves := mem_right_mem_adjoint_left h2
-          have h6 : gr + gr° ∈ (gr + g°).leftMoves :=
+        · have h3 : gr + gr° ∈ (gr + g°).leftMoves :=
             IGame.add_left_mem_leftMoves_add (mem_right_mem_adjoint_left h2) gr
           rw [LeftWinsGoingFirst_def]
           apply Or.inr
           use gr + gr°
-          exact And.intro h6 (P_ne_RR (proposition6_4 gr))
+          exact And.intro h3 (P_ne_RR (proposition6_4 gr))
         · rw [LeftWinsGoingFirst_def]
           by_cases h3 : g.leftMoves = ∅
           · apply Or.inl
@@ -368,12 +383,12 @@ theorem proposition6_4 (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
               unfold Adjoint at h2
               by_cases h5 : g.rightMoves = ∅
               · have h6 : g = 0 := leftEnd_rightEnd_zero h3 h5
-                simp[*] at *
+                simp only [h6, reduceIte, IGame.rightMoves_star, Set.mem_singleton_iff] at h2
                 exact h2
               · have h6 : g ≠ 0 := by
                   intro h6
                   simp [h6] at h5
-                simp [IsLeftEnd, IsRightEnd,  h3, h6] at h2
+                simp [h3, h6, IsLeftEnd, IsRightEnd] at h2
                 exact h2
             simp [h4]
             exact h3
@@ -391,7 +406,43 @@ theorem proposition6_4 (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
     unfold LeftOutcome
     have h2 : ¬(LeftWinsGoingFirst (g + g°)) := by
       rw [LeftWinsGoingFirst_def]
-      sorry
+      simp
+      constructor
+      · intro h1
+        unfold IsLeftEnd at h1
+        simp at h1
+        exact (adjoint_not_leftEnd g) h1.right
+      · intro k h1
+        apply Or.elim h1 <;> intro ⟨gl, h2, h3⟩ <;> rw [<-h3] <;> clear h1 h3 k
+        · have h3 : gl + gl° ∈ (gl + g°).rightMoves :=
+            IGame.add_left_mem_rightMoves_add (mem_left_mem_adjoint_right h2) gl
+          rw [RightWinsGoingFirst_def]
+          apply Or.inr
+          use gl + gl°
+          exact And.intro h3 (P_ne_LL (proposition6_4 gl))
+        · rw [RightWinsGoingFirst_def]
+          by_cases h3 : g.rightMoves = ∅
+          · apply Or.inl
+            have h4 : gl = 0 := by
+              unfold Adjoint at h2
+              by_cases h5 : g.leftMoves = ∅
+              · have h6 : g = 0 := leftEnd_rightEnd_zero h5 h3
+                simp only [h6, reduceIte, IGame.leftMoves_star, Set.mem_singleton_iff] at h2
+                exact h2
+              · have h6 : g ≠ 0 := by
+                  intro h6
+                  simp [h6] at h5
+                simp [h3, h5, h6, IsLeftEnd, IsRightEnd] at h2
+                exact h2
+            simp [h4]
+            exact h3
+          · apply Or.inr
+            have ⟨gr, h3, h4⟩ := mem_left_adjoint_exists_right h2 h3
+            rw [h4]
+            use gr + gr°
+            constructor
+            · exact IGame.add_right_mem_rightMoves_add h3 (gr°)
+            · exact P_ne_LL (proposition6_4 gr)
     simp [h2]
   simp [h1, h2]
 termination_by g
