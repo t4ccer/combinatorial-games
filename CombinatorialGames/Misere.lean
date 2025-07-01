@@ -636,7 +636,69 @@ decreasing_by
 mutual
 
 theorem left_outcome_conjugate (g : IGame) : LeftOutcome (-g) = (RightOutcome g).Conjugate := by
-  sorry
+  unfold LeftOutcome
+  rw [LeftWinsGoingFirst_def, IGame.leftMoves_neg]
+  split_ifs with h1
+  · apply Or.elim h1 <;> intro h1
+    · have h2 : IsRightEnd g := leftEnd_neg_rightEnd h1
+      unfold RightOutcome
+      rw [RightWinsGoingFirst_def]
+      simp [h2]
+      rfl
+    · obtain ⟨gl, h1, h2⟩ := h1
+      unfold RightOutcome
+      have h3 : RightWinsGoingFirst g := by
+        rw [RightWinsGoingFirst_def]
+        apply Or.inr
+        use -gl
+        apply And.intro h1
+        rw [<-rightOutcome_not_rightWinsFirst] at h2
+        rw [<-leftOutcome_not_leftWinsFirst]
+        apply Eq.symm
+        have h3 : PlayerOutcome.R.Conjugate = PlayerOutcome.L  := rfl
+        rw [playerOutcome_conjugate_eq, h3, <-h2]
+        have h4 := right_outcome_conjugate (-gl)
+        rw [neg_neg] at h4
+        exact h4
+      simp [h3]
+      rfl
+  · simp at h1
+    obtain ⟨h1, h2⟩ := h1
+    unfold RightOutcome
+    have h3 : ¬RightWinsGoingFirst g := by
+      unfold RightWinsGoingFirst
+      simp
+      have h3 : ¬IsRightEnd g := by
+        intro h3
+        unfold IsLeftEnd at h1
+        simp at h1
+        exact h1 h3
+      apply And.intro h3
+      intro gl h4
+      have h5 := h2 (-gl)
+      rw [neg_neg] at h5
+      have h6 := h5 h4
+      rw [RightWinsGoingFirst_def] at h6
+      apply Or.elim h6 <;> intro h6
+      · rw [LeftWinsGoingFirst_def]
+        apply Or.inl
+        unfold IsRightEnd at h6
+        simp at h6
+        exact h6
+      · obtain ⟨x, h6, h7⟩ := h6
+        simp at h6
+        rw [LeftWinsGoingFirst_def]
+        apply Or.inr
+        use -x
+        apply And.intro h6
+        have h8 : ¬LeftWinsGoingFirst (- (-x)) := by
+          simp only [neg_neg]
+          exact h7
+        exact (Iff.not (not_right_not_left_neg' (-x))).mpr h8
+    simp [h3]
+    rfl
+termination_by g
+decreasing_by igame_wf
 
 theorem right_outcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g).Conjugate := by
   unfold RightOutcome
@@ -650,7 +712,7 @@ theorem right_outcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g
       rfl
     · obtain ⟨gr, h1, h2⟩ := h1
       unfold LeftOutcome
-      have h4 : LeftWinsGoingFirst g := by
+      have h3 : LeftWinsGoingFirst g := by
         rw [LeftWinsGoingFirst_def]
         apply Or.inr
         use -gr
@@ -663,7 +725,7 @@ theorem right_outcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g
         have h4 := left_outcome_conjugate (-gr)
         rw [neg_neg] at h4
         exact h4
-      simp [h4]
+      simp [h3]
       rfl
   · simp at h1
     obtain ⟨h1, h2⟩ := h1
@@ -697,6 +759,8 @@ theorem right_outcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g
         exact (Iff.not (not_right_not_left_neg' x)).mp h7
     simp [h3]
     rfl
+termination_by g
+decreasing_by igame_wf
 
 end
 
