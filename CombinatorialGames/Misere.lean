@@ -1,5 +1,6 @@
 import CombinatorialGames.Game.IGame
 import CombinatorialGames.Game.Special
+import CombinatorialGames.Game.Birthday
 import Mathlib.Data.Set.Operations
 
 inductive PlayerOutcome where
@@ -600,7 +601,7 @@ theorem rightOutcome_not_rightWinsFirst {g : IGame} : (RightOutcome g = PlayerOu
 theorem playerOutcome_conjugate_eq {a b : PlayerOutcome} : (a = b) ↔ (a.Conjugate = b.Conjugate) := by
   cases a <;> cases b <;> simp [PlayerOutcome.Conjugate]
 
-theorem not_right_not_left_neg' (g : IGame) : (RightWinsGoingFirst g) ↔ (LeftWinsGoingFirst (-g)) := by
+theorem rightWinsFirst_iff_neg_leftWinsFirst (g : IGame) : (RightWinsGoingFirst g) ↔ (LeftWinsGoingFirst (-g)) := by
   constructor <;> intro h1
   · rw [RightWinsGoingFirst_def] at h1
     apply Or.elim h1 <;> intro h1
@@ -614,7 +615,7 @@ theorem not_right_not_left_neg' (g : IGame) : (RightWinsGoingFirst g) ↔ (LeftW
       use -gr
       simp
       apply And.intro h1
-      have h3 := (Iff.not (not_right_not_left_neg' (-gr))).mpr
+      have h3 := (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst (-gr))).mpr
       simp [neg_neg] at h3
       exact h3 h2
   · rw [LeftWinsGoingFirst_def] at h1
@@ -627,11 +628,18 @@ theorem not_right_not_left_neg' (g : IGame) : (RightWinsGoingFirst g) ↔ (LeftW
       use -gl
       simp at h1
       apply And.intro h1
-      exact (Iff.not (not_right_not_left_neg' (gl))).mp h2
-termination_by g
+      exact (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst (gl))).mp h2
+termination_by IGame.birthday g
 decreasing_by
-  · sorry
-  · sorry
+  · rw [IGame.birthday_neg, IGame.lt_birthday_iff]
+    apply Or.inr
+    use gr
+  · simp at h1
+    rw [IGame.lt_birthday_iff]
+    apply Or.inr
+    use -gl
+    apply And.intro h1
+    rw [IGame.birthday_neg]
 
 mutual
 
@@ -694,7 +702,7 @@ theorem left_outcome_conjugate (g : IGame) : LeftOutcome (-g) = (RightOutcome g)
         have h8 : ¬LeftWinsGoingFirst (- (-x)) := by
           simp only [neg_neg]
           exact h7
-        exact (Iff.not (not_right_not_left_neg' (-x))).mpr h8
+        exact (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst (-x))).mpr h8
     simp [h3]
     rfl
 termination_by g
@@ -756,7 +764,7 @@ theorem right_outcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g
         apply Or.inr
         use -x
         apply And.intro h6
-        exact (Iff.not (not_right_not_left_neg' x)).mp h7
+        exact (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst x)).mp h7
     simp [h3]
     rfl
 termination_by g
