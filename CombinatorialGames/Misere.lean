@@ -458,110 +458,6 @@ decreasing_by all_goals igame_wf
 
 alias proposition6_4 := outcome_add_adjoint_eq_P
 
-theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬MisereGe g h := by
-  let t := {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
-  -- First consider H + T
-  have h3 : MisereOutcome (h + t) ≥ Outcome.P := by
-    apply not_rightWinsGoingFirst_ge_P
-    unfold RightWinsGoingFirst
-    simp only [IGame.rightMoves_add, Set.union_empty_iff, Set.image_eq_empty, Set.mem_union,
-               Set.mem_image, not_or, not_and, not_exists, not_not]
-    apply And.intro (fun _ => by
-      simp only [t, IGame.rightMoves_ofSets, Set.singleton_ne_empty, not_false_eq_true])
-    intro x h3
-    apply Or.elim h3 <;> clear h3 <;> intro ⟨hr, h3, h4⟩ <;> rw [<-h4]
-    · -- If Right moves to H^R + T, then Left has a winning response to H^R + (H^R)°
-      refine outcome_eq_P_leftWinsGoingFirst ?_ (outcome_add_adjoint_eq_P hr)
-      refine IGame.add_left_mem_leftMoves_add ?_ hr
-      simp only [t, IGame.leftMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
-      exists hr
-    · -- If instead Right moves to H + { | (G^L)°}, then Left wins outright,
-      -- since (by the assumption on H) both components are Left ends
-      apply add_leftEnd_LeftWinsGoingFirst h1
-      simp only [t, IGame.rightMoves_ofSets, Set.mem_singleton_iff] at h3
-      simp only [t, h3, IGame.leftMoves_ofSets, IsLeftEnd]
-  -- Next consider G + T
-  have h4 : MisereOutcome (g + t) ≤ Outcome.N := by
-    apply rightWinsGoingFirst_outcome_le_N
-    rw [RightWinsGoingFirst_def]
-    apply Or.inr
-    -- Right has a move to G + { | (G^L)° }
-    use (g + {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ)
-    constructor
-    · refine IGame.add_left_mem_rightMoves_add ?_ g
-      simp only [t, IGame.rightMoves_ofSets, Set.mem_singleton_iff]
-    · rw [LeftWinsGoingFirst_def]
-      simp only [IGame.leftMoves_add, IGame.leftMoves_ofSets, Set.image_empty, Set.union_empty,
-                 Set.image_eq_empty, Set.mem_image, exists_exists_and_eq_and, not_or, not_exists,
-                 not_and, not_not, IsLeftEnd]
-      apply And.intro h2
-      intro gl h4
-      -- from which Left's only options have the form G^L + { | (G^L)° }
-      rw [RightWinsGoingFirst_def]
-      apply Or.inr
-      -- There must be at least one such option, by the assumption on G;
-      -- and each such option has a mirror-image response by Right, to G^L + (G^L)°
-      use (gl + gl°)
-      refine And.intro ?_ (outcome_eq_P_not_leftWinsGoingFirst (outcome_add_adjoint_eq_P gl))
-      refine IGame.add_left_mem_rightMoves_add ?_ gl
-      simp only [IGame.rightMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
-      use gl
-  unfold MisereGe
-  intro h5
-  have h6 : MisereOutcome (g + t) ≥ Outcome.P :=
-    Preorder.le_trans Outcome.P (MisereOutcome (h + t)) (MisereOutcome (g + t)) h3 (h5 t)
-  cases h7 : MisereOutcome (g + t)
-  all_goals simp [h7, instLEOutcome, Outcome.le', Outcome.lt'] at h4 h6
-
-alias theorem6_6 := leftEnd_not_leftEnd_not_ge
-
--- Manual version of theorem6_6'' to not use sorry cause I can't prove `MisereEq_negAux` rn
-theorem rightEnd_not_rightEnd_not_ge {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬MisereGe h g := by
-  let t := { { { Set.range fun gr : g.rightMoves => Adjoint gr | ∅ }ᴵ } | Set.range fun hl : h.leftMoves => Adjoint hl }ᴵ
-  have h3 : MisereOutcome (h + t) ≤ Outcome.P := by
-    apply not_leftWinsGoingFirst_le_P
-    unfold LeftWinsGoingFirst
-    simp only [IGame.leftMoves_add, Set.union_empty_iff, Set.image_eq_empty, Set.mem_union,
-               Set.mem_image, not_or, not_and, not_exists, not_not]
-    apply And.intro (fun _ => by
-      simp only [t, IGame.leftMoves_ofSets, Set.singleton_ne_empty, not_false_eq_true])
-    intro x h3
-    apply Or.elim h3 <;> clear h3 <;> intro ⟨hl, h3, h4⟩ <;> rw [<-h4]
-    · refine outcome_eq_P_rightWinsGoingFirst ?_ (outcome_add_adjoint_eq_P hl)
-      refine IGame.add_left_mem_rightMoves_add ?_ hl
-      simp only [t, IGame.rightMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
-      exists hl
-    · apply add_rightEnd_RightWinsGoingFirst h1
-      simp only [t, IGame.leftMoves_ofSets, Set.mem_singleton_iff] at h3
-      simp only [h3, IGame.rightMoves_ofSets, IsRightEnd]
-  have h4 : MisereOutcome (g + t) ≥ Outcome.N := by
-    apply leftWinsGoingFirst_outcome_ge_N
-    rw [LeftWinsGoingFirst_def]
-    apply Or.inr
-    use (g + { Set.range fun gr : g.rightMoves => Adjoint gr | ∅ }ᴵ)
-    constructor
-    · refine IGame.add_left_mem_leftMoves_add ?_ g
-      simp only [t, IGame.leftMoves_ofSets, Set.mem_singleton_iff]
-    · rw [RightWinsGoingFirst_def]
-      simp only [IGame.rightMoves_add, IGame.rightMoves_ofSets, Set.image_empty, Set.union_empty,
-                 Set.image_eq_empty, Set.mem_image, exists_exists_and_eq_and, not_or, not_exists,
-                 not_and, not_not, IsRightEnd]
-      apply And.intro h2
-      intro gr h4
-      rw [LeftWinsGoingFirst_def]
-      apply Or.inr
-      use (gr + gr°)
-      refine And.intro ?_ (outcome_eq_P_not_rightWinsGoingFirst (outcome_add_adjoint_eq_P gr))
-      refine IGame.add_left_mem_leftMoves_add ?_ gr
-      simp only [IGame.leftMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
-      use gr
-  unfold MisereGe
-  intro h5
-  have h6 : MisereOutcome (g + t) ≤ Outcome.P :=
-    Preorder.le_trans (MisereOutcome (g + t)) (MisereOutcome (h + t)) Outcome.P (h5 t) h3
-  cases h7 : MisereOutcome (g + t)
-  all_goals simp [h7, instLEOutcome, Outcome.le', Outcome.lt'] at h4 h6
-
 def PlayerOutcome.Conjugate : PlayerOutcome → PlayerOutcome
   | .L => .R
   | .R => .L
@@ -628,7 +524,7 @@ theorem rightWinsFirst_iff_neg_leftWinsFirst (g : IGame) : (RightWinsGoingFirst 
       use -gl
       simp at h1
       apply And.intro h1
-      exact (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst (gl))).mp h2
+      exact (Iff.not (rightWinsFirst_iff_neg_leftWinsFirst gl)).mp h2
 termination_by IGame.birthday g
 decreasing_by
   · rw [IGame.birthday_neg, IGame.lt_birthday_iff]
@@ -818,7 +714,64 @@ theorem MisereEq_neg {g h : IGame} : (MisereGe g h ↔ MisereGe (-h) (-g)) := by
     simp only [neg_neg] at h2
     exact h2
 
-theorem theorem6_6'' {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬MisereGe h g := by
+theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬MisereGe g h := by
+  let t := {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
+  -- First consider H + T
+  have h3 : MisereOutcome (h + t) ≥ Outcome.P := by
+    apply not_rightWinsGoingFirst_ge_P
+    unfold RightWinsGoingFirst
+    simp only [IGame.rightMoves_add, Set.union_empty_iff, Set.image_eq_empty, Set.mem_union,
+               Set.mem_image, not_or, not_and, not_exists, not_not]
+    apply And.intro (fun _ => by
+      simp only [t, IGame.rightMoves_ofSets, Set.singleton_ne_empty, not_false_eq_true])
+    intro x h3
+    apply Or.elim h3 <;> clear h3 <;> intro ⟨hr, h3, h4⟩ <;> rw [<-h4]
+    · -- If Right moves to H^R + T, then Left has a winning response to H^R + (H^R)°
+      refine outcome_eq_P_leftWinsGoingFirst ?_ (outcome_add_adjoint_eq_P hr)
+      refine IGame.add_left_mem_leftMoves_add ?_ hr
+      simp only [t, IGame.leftMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
+      exists hr
+    · -- If instead Right moves to H + { | (G^L)°}, then Left wins outright,
+      -- since (by the assumption on H) both components are Left ends
+      apply add_leftEnd_LeftWinsGoingFirst h1
+      simp only [t, IGame.rightMoves_ofSets, Set.mem_singleton_iff] at h3
+      simp only [t, h3, IGame.leftMoves_ofSets, IsLeftEnd]
+  -- Next consider G + T
+  have h4 : MisereOutcome (g + t) ≤ Outcome.N := by
+    apply rightWinsGoingFirst_outcome_le_N
+    rw [RightWinsGoingFirst_def]
+    apply Or.inr
+    -- Right has a move to G + { | (G^L)° }
+    use (g + {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ)
+    constructor
+    · refine IGame.add_left_mem_rightMoves_add ?_ g
+      simp only [t, IGame.rightMoves_ofSets, Set.mem_singleton_iff]
+    · rw [LeftWinsGoingFirst_def]
+      simp only [IGame.leftMoves_add, IGame.leftMoves_ofSets, Set.image_empty, Set.union_empty,
+                 Set.image_eq_empty, Set.mem_image, exists_exists_and_eq_and, not_or, not_exists,
+                 not_and, not_not, IsLeftEnd]
+      apply And.intro h2
+      intro gl h4
+      -- from which Left's only options have the form G^L + { | (G^L)° }
+      rw [RightWinsGoingFirst_def]
+      apply Or.inr
+      -- There must be at least one such option, by the assumption on G;
+      -- and each such option has a mirror-image response by Right, to G^L + (G^L)°
+      use (gl + gl°)
+      refine And.intro ?_ (outcome_eq_P_not_leftWinsGoingFirst (outcome_add_adjoint_eq_P gl))
+      refine IGame.add_left_mem_rightMoves_add ?_ gl
+      simp only [IGame.rightMoves_ofSets, Set.mem_range, Subtype.exists, exists_prop]
+      use gl
+  unfold MisereGe
+  intro h5
+  have h6 : MisereOutcome (g + t) ≥ Outcome.P :=
+    Preorder.le_trans Outcome.P (MisereOutcome (h + t)) (MisereOutcome (g + t)) h3 (h5 t)
+  cases h7 : MisereOutcome (g + t)
+  all_goals simp [h7, instLEOutcome, Outcome.le', Outcome.lt'] at h4 h6
+
+alias theorem6_6 := leftEnd_not_leftEnd_not_ge
+
+theorem rightEnd_not_rightEnd_not_ge {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬MisereGe h g := by
   unfold IsRightEnd at h1 h2
   have h3 : (-h).leftMoves = ∅ := by
     simp only [h1, IGame.leftMoves_neg, Set.neg_empty]
