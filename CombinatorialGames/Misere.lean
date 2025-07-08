@@ -119,9 +119,24 @@ def PlayerOutcomesToGameOutcome : PlayerOutcome → PlayerOutcome → Outcome
 noncomputable def MisereOutcome : IGame → Outcome :=
   fun g => PlayerOutcomesToGameOutcome (LeftOutcome g) (RightOutcome g)
 
-def MisereEq (g h : IGame) : Prop := ∀ (x : IGame), MisereOutcome (g + x) = MisereOutcome (h + x)
+def MisereEq (A : IGame → Prop) (g h : IGame) : Prop :=
+  ∀ (x : IGame), A x → MisereOutcome (g + x) = MisereOutcome (h + x)
 
-def MisereGe (g h : IGame) : Prop := ∀ (x : IGame), MisereOutcome (g + x) ≥ MisereOutcome (h + x)
+/-- `G =m A H` means that G =_A H -/
+macro_rules | `($x =m $u $y) => `(MisereEq $u $x $y)
+
+recommended_spelling "eq" for "=m" in [MisereEq]
+
+def MisereGe (A : IGame → Prop) (g h : IGame) : Prop :=
+  ∀ x, (A x → MisereOutcome (g + x) ≥ MisereOutcome (h + x))
+
+/-- `G ≥m A H` means that G ≥_A H -/
+macro_rules | `($x ≥m $u $y) => `(MisereGe $u $x $y)
+
+recommended_spelling "ge" for "≥m" in [MisereGe]
+
+/-- No constraints on game form. You can prove `AnyGame x` with `trivial` -/
+def AnyGame (_ : IGame) := True
 
 theorem Outcome.ge_R (o : Outcome) : o ≥ Outcome.R := by
   simp only [ge_iff_le]
@@ -148,7 +163,7 @@ theorem leftEnd_rightEnd_eq_zero {g : IGame} (hl : IsLeftEnd g) (hr : IsRightEnd
   · simp only [hr, Set.mem_empty_iff_false, IGame.rightMoves_ofSets]
 
 theorem proposition6_1 (g h : IGame) :
-  MisereGe g h ↔ (∀ (x : IGame),
+  (g ≥m AnyGame h) ↔ (∀ (x : IGame),
   (MisereOutcome (h + x) ≥ Outcome.P → MisereOutcome (g + x) ≥ Outcome.P) ∧
   (MisereOutcome (h + x) ≥ Outcome.N → MisereOutcome (g + x) ≥ Outcome.N)) := by
   constructor <;> intro h1
@@ -156,11 +171,11 @@ theorem proposition6_1 (g h : IGame) :
     intro x
     unfold MisereGe at h1
     constructor <;> intro h2
-    · exact Preorder.le_trans Outcome.P (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x)
-    · exact Preorder.le_trans Outcome.N (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x)
+    · exact Preorder.le_trans Outcome.P (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
+    · exact Preorder.le_trans Outcome.N (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
   · -- For the converse, we must show that o(G + X) > o(H + X), for all X.
     unfold MisereGe
-    intro x
+    intro x _
     obtain ⟨h2, h3⟩ := h1 x
     cases ho : MisereOutcome (h + x) with
     | R =>
@@ -224,11 +239,12 @@ theorem ne_zero_not_leftEnd_or_not_rightEnd {g : IGame} (h1 : g ≠ 0) : ¬(IsLe
   obtain ⟨h2, h3⟩ := h2
   exact h1 (leftEnd_rightEnd_eq_zero h2 h3)
 
-theorem not_MisereEq_of_not_MisereGe {g h : IGame} (h1 : ¬MisereGe g h) : ¬MisereEq g h := by
+theorem not_MisereEq_of_not_MisereGe {g h : IGame} (h1 : ¬(g ≥m AnyGame h)) : ¬(g =m AnyGame h) := by
   simp only [MisereGe, ge_iff_le, not_forall] at h1
-  obtain ⟨x, h1⟩ := h1
+  obtain ⟨x, ⟨_, h1⟩⟩ := h1
   simp only [MisereEq, not_forall]
   use x
+  use trivial
   exact Ne.symm (ne_of_not_le h1)
 
 /-- `o(G) ≥ P` is equivalent to "Left can win playing second on `G`" -/
@@ -700,11 +716,11 @@ theorem conjugate_conjugate_eq_self {o : Outcome} : o.Conjugate.Conjugate = o :=
   unfold Outcome.Conjugate
   cases o <;> rfl
 
-theorem not_ge_neg_iff.aux {g h : IGame} (h1 : MisereGe g h): MisereGe (-h) (-g) := by
+theorem not_ge_neg_iff.aux {g h : IGame} (h1 : g ≥m AnyGame h): (-h) ≥m AnyGame (-g) := by
   unfold MisereGe at *
-  intro x
+  intro x _
   have h2 := h1 (-x)
-  have h3 := outcome_ge_conjugate_le h2
+  have h3 := outcome_ge_conjugate_le (h2 trivial)
   have h4 : MisereOutcome (-h + x) = (MisereOutcome (-h + x)).Conjugate.Conjugate := Eq.symm conjugate_conjugate_eq_self
   have h5 : (MisereOutcome (-h + x)).Conjugate.Conjugate = (MisereOutcome (h + (-x))).Conjugate := by
     simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
@@ -713,16 +729,16 @@ theorem not_ge_neg_iff.aux {g h : IGame} (h1 : MisereGe g h): MisereGe (-h) (-g)
     simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
   rw [<-h6]
   apply outcome_ge_conjugate_le
-  exact h2
+  exact h2 trivial
 
-theorem neg_ge_neg_iff {g h : IGame} : (MisereGe (-h) (-g) ↔ MisereGe g h) := by
+theorem neg_ge_neg_iff {g h : IGame} : ((-h) ≥m AnyGame (-g) ↔ g ≥m AnyGame h) := by
   constructor <;> intro h1
   · have h2 := not_ge_neg_iff.aux h1
     simp only [neg_neg] at h2
     exact h2
   · exact not_ge_neg_iff.aux h1
 
-theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬MisereGe g h := by
+theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬(g ≥m AnyGame h) := by
   let t := {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
   -- First consider H + T
   have h3 : MisereOutcome (h + t) ≥ Outcome.P := by
@@ -773,7 +789,7 @@ theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsL
   unfold MisereGe
   intro h5
   have h6 : MisereOutcome (g + t) ≥ Outcome.P :=
-    Preorder.le_trans Outcome.P (MisereOutcome (h + t)) (MisereOutcome (g + t)) h3 (h5 t)
+    Preorder.le_trans Outcome.P (MisereOutcome (h + t)) (MisereOutcome (g + t)) h3 (h5 t trivial)
   cases h7 : MisereOutcome (g + t)
   all_goals simp only [t, h7, Outcome.le', Outcome.lt', and_false, and_self, and_true,
                        ge_iff_le, instLEOutcome, le_refl, ne_eq, not_false_eq_true,
@@ -781,16 +797,20 @@ theorem leftEnd_not_leftEnd_not_ge {g h : IGame} (h1 : IsLeftEnd h) (h2 : ¬(IsL
 
 alias theorem6_6 := leftEnd_not_leftEnd_not_ge
 
-theorem rightEnd_not_rightEnd_not_ge {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬MisereGe h g := by
+theorem rightEnd_not_rightEnd_not_ge {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬(h ≥m AnyGame g) := by
   unfold IsRightEnd at h1 h2
   have h3 : IsLeftEnd (-h) := leftEnd_neg_iff_rightEnd.mpr h1
   have h4 : ¬(IsLeftEnd (-g)) := leftEnd_neg_iff_rightEnd.not.mpr h2
-  have h5 : ¬MisereGe (-g) (-h) := leftEnd_not_leftEnd_not_ge h3 h4
+  have h5 : ¬((-g) ≥m AnyGame (-h)) := leftEnd_not_leftEnd_not_ge h3 h4
   exact neg_ge_neg_iff.not.mp h5
 
-theorem MisereEq_symm {g h : IGame} (h1 : MisereEq g h) : MisereEq h g := fun x => Eq.symm (h1 x)
+theorem MisereEq_symm {A : IGame → Prop} {g h : IGame} (h1 : g =m A h) : h =m A g := by
+  unfold MisereEq at *
+  intro x h2
+  have h3 := h1 x h2
+  exact Eq.symm h3
 
-theorem ne_zero_not_eq_zero {g : IGame} (h1 : g ≠ 0) : ¬MisereEq g 0 := by
+theorem ne_zero_not_eq_zero {g : IGame} (h1 : g ≠ 0) : ¬(g =m AnyGame 0) := by
   apply Or.elim (ne_zero_not_leftEnd_or_not_rightEnd h1) <;> intro h2
   · exact not_MisereEq_of_not_MisereGe (leftEnd_not_leftEnd_not_ge IGame.leftMoves_zero h2)
   · intro h3
@@ -798,10 +818,11 @@ theorem ne_zero_not_eq_zero {g : IGame} (h1 : g ≠ 0) : ¬MisereEq g 0 := by
 
 alias corollary6_7 := ne_zero_not_eq_zero
 
-theorem eq_zero_iff_identical_zero {g : IGame} : (MisereEq g 0 ↔ g = 0) := by
+theorem eq_zero_iff_identical_zero {g : IGame} : (g =m AnyGame 0 ↔ g = 0) := by
   constructor <;> intro h1
   · by_contra h2
     have h3 := ne_zero_not_eq_zero h2
     exact h3 h1
   · rw [h1]
+    intro _
     exact congrFun rfl
