@@ -826,3 +826,6 @@ theorem eq_zero_iff_identical_zero {g : IGame} : (g =m AnyGame 0 ↔ g = 0) := b
   · rw [h1]
     intro _
     exact congrFun rfl
+
+theorem MisereGe_antisymm {A : IGame → Prop} {g h : IGame} (h1 : g ≥m A h) (h2 : h ≥m A g) : g =m A h :=
+  fun x h3 => PartialOrder.le_antisymm (MisereOutcome (g + x)) (MisereOutcome (h + x)) (h2 x h3) (h1 x h3)
