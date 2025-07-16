@@ -718,44 +718,34 @@ theorem conjugate_conjugate_eq_self {o : Outcome} : o.Conjugate.Conjugate = o :=
 
 -- NOTE: Can be generalized if (A g) → (A -g)
 
-theorem Transfinite.not_ge_neg_iff.aux {g h : IGame} (h1 : g ≥m AnyGame h): (-h) ≥m AnyGame (-g) := by
-  unfold MisereGe at *
-  intro x _
-  have h2 := h1 (-x)
-  have h3 := outcome_ge_conjugate_le (h2 trivial)
-  have h4 : MisereOutcome (-h + x) = (MisereOutcome (-h + x)).Conjugate.Conjugate := Eq.symm conjugate_conjugate_eq_self
-  have h5 : (MisereOutcome (-h + x)).Conjugate.Conjugate = (MisereOutcome (h + (-x))).Conjugate := by
-    simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
-  rw [h4, h5]
-  have h6 : (MisereOutcome (g + (-x))).Conjugate = MisereOutcome (-g + x) := by
-    simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
-  rw [<-h6]
-  apply outcome_ge_conjugate_le
-  exact h2 trivial
+class HasNeg (A : IGame → Prop) where
+  has_neg (g : IGame) (h1 : A g) : A (-g)
 
-theorem Short.not_ge_neg_iff.aux {g h : IGame} (h1 : g ≥m IGame.Short h): (-h) ≥m IGame.Short (-g) := by
+instance : HasNeg AnyGame where
+  has_neg _ _ := trivial
+
+instance : HasNeg IGame.Short where
+  has_neg g _ := IGame.Short.neg g
+
+theorem HasNeg.not_ge_neg_iff.aux {A : IGame → Prop} [HasNeg A] {g h : IGame} (h1 : g ≥m A h)
+    : (-h) ≥m A (-g) := by
   unfold MisereGe at *
   intro x h0
   have h2 := h1 (-x)
-  have h3 := outcome_ge_conjugate_le (h2 (IGame.Short.neg x))
-  have h4 : MisereOutcome (-h + x) = (MisereOutcome (-h + x)).Conjugate.Conjugate := Eq.symm conjugate_conjugate_eq_self
-  have h5 : (MisereOutcome (-h + x)).Conjugate.Conjugate = (MisereOutcome (h + (-x))).Conjugate := by
-    simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
+  have h3 := outcome_ge_conjugate_le (h2 (HasNeg.has_neg x h0))
+  have h4 : MisereOutcome (-h + x) = (MisereOutcome (-h + x)).Conjugate.Conjugate :=
+    Eq.symm conjugate_conjugate_eq_self
+  have h5 : (MisereOutcome (-h + x)).Conjugate.Conjugate = (MisereOutcome (h + (-x))).Conjugate :=
+    by simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
   rw [h4, h5]
   have h6 : (MisereOutcome (g + (-x))).Conjugate = MisereOutcome (-g + x) := by
     simp only [outcome_conjugate_eq_outcome_neg, neg_add_rev, neg_neg, add_comm]
   rw [<-h6]
   apply outcome_ge_conjugate_le
-  exact h2 (IGame.Short.neg x)
+  exact h2 (HasNeg.has_neg x h0)
 
-theorem Transfinite.neg_ge_neg_iff {g h : IGame} : ((-h) ≥m AnyGame (-g) ↔ g ≥m AnyGame h) := by
-  constructor <;> intro h1
-  · have h2 := not_ge_neg_iff.aux h1
-    simp only [neg_neg] at h2
-    exact h2
-  · exact not_ge_neg_iff.aux h1
-
-theorem Short.neg_ge_neg_iff {g h : IGame} : ((-h) ≥m IGame.Short (-g) ↔ g ≥m IGame.Short h) := by
+theorem HasNeg.neg_ge_neg_iff {A : IGame → Prop} [HasNeg A] {g h : IGame}
+    : ((-h) ≥m A (-g) ↔ g ≥m A h) := by
   constructor <;> intro h1
   · have h2 := not_ge_neg_iff.aux h1
     simp only [neg_neg] at h2
@@ -807,7 +797,8 @@ decreasing_by all_goals igame_wf
 noncomputable def leftEnd_not_leftEnd_not_ge.auxT (g h : IGame) : IGame :=
   {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
 
-instance {g h : IGame} [h1 : IGame.Short g] [h2 : IGame.Short h] : IGame.Short (leftEnd_not_leftEnd_not_ge.auxT g h) := by
+instance {g h : IGame} [h1 : IGame.Short g] [h2 : IGame.Short h]
+    : IGame.Short (leftEnd_not_leftEnd_not_ge.auxT g h) := by
   unfold leftEnd_not_leftEnd_not_ge.auxT
   refine IGame.Short.mk' ?_ ?_ ?_ ?_
   · simp only [IGame.leftMoves_ofSets]
@@ -834,7 +825,8 @@ instance {g h : IGame} [h1 : IGame.Short g] [h2 : IGame.Short h] : IGame.Short (
       exact short_adjoint gl
 
 theorem leftEnd_not_leftEnd_not_ge
-  {A : IGame → Prop} {g h : IGame} (h0 : A (leftEnd_not_leftEnd_not_ge.auxT g h)) (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬(g ≥m A h) := by
+    {A : IGame → Prop} {g h : IGame} (h0 : A (leftEnd_not_leftEnd_not_ge.auxT g h))
+    (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬(g ≥m A h) := by
   let t := {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
 
   -- First consider H + T
@@ -894,18 +886,14 @@ theorem leftEnd_not_leftEnd_not_ge
 
 alias theorem6_6 := leftEnd_not_leftEnd_not_ge
 
-theorem Transfinite.rightEnd_not_rightEnd_not_ge {g h : IGame} (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬(h ≥m AnyGame g) := by
+theorem HasNeg.rightEnd_not_rightEnd_not_ge
+    {A : IGame → Prop} [HasNeg A] {g h : IGame}
+    (h0 : A (leftEnd_not_leftEnd_not_ge.auxT (-g) (-h))) (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g))
+    : ¬(h ≥m A g) := by
   unfold IsRightEnd at h1 h2
   have h3 : IsLeftEnd (-h) := leftEnd_neg_iff_rightEnd.mpr h1
   have h4 : ¬(IsLeftEnd (-g)) := leftEnd_neg_iff_rightEnd.not.mpr h2
-  have h5 : ¬((-g) ≥m AnyGame (-h)) := leftEnd_not_leftEnd_not_ge trivial h3 h4
-  exact neg_ge_neg_iff.not.mp h5
-
-theorem Short.rightEnd_not_rightEnd_not_ge {g h : IGame} [IGame.Short g] [IGame.Short h] (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g)) : ¬(h ≥m IGame.Short g) := by
-  unfold IsRightEnd at h1 h2
-  have h3 : IsLeftEnd (-h) := leftEnd_neg_iff_rightEnd.mpr h1
-  have h4 : ¬(IsLeftEnd (-g)) := leftEnd_neg_iff_rightEnd.not.mpr h2
-  have h5 : ¬((-g) ≥m IGame.Short (-h)) := leftEnd_not_leftEnd_not_ge instShortAuxT h3 h4
+  have h5 : ¬((-g) ≥m A (-h)) := leftEnd_not_leftEnd_not_ge h0 h3 h4
   exact neg_ge_neg_iff.not.mp h5
 
 theorem MisereEq_symm {A : IGame → Prop} {g h : IGame} (h1 : g =m A h) : h =m A g := by
@@ -914,37 +902,42 @@ theorem MisereEq_symm {A : IGame → Prop} {g h : IGame} (h1 : g =m A h) : h =m 
   have h3 := h1 x h2
   exact Eq.symm h3
 
-theorem Transfinite.ne_zero_not_eq_zero {g : IGame} (h1 : g ≠ 0) : ¬(g =m AnyGame 0) := by
+theorem MisereGe_antisymm {A : IGame → Prop} {g h : IGame} (h1 : g ≥m A h) (h2 : h ≥m A g)
+    : g =m A h := fun x h3 =>
+  PartialOrder.le_antisymm (MisereOutcome (g + x)) (MisereOutcome (h + x)) (h2 x h3) (h1 x h3)
+
+class EqZeroIdentical (A : IGame → Prop) extends (HasNeg A) where
+  has_T_g_zero {g : IGame} (h1 : A g) : A (leftEnd_not_leftEnd_not_ge.auxT g 0)
+
+instance : EqZeroIdentical AnyGame where
+  has_T_g_zero _ := trivial
+
+instance : EqZeroIdentical IGame.Short where
+  has_T_g_zero _ := instShortAuxT
+
+theorem EqZeroIdentical.ne_zero_not_eq_zero
+    {A : IGame → Prop} [EqZeroIdentical A] {g : IGame} (h0 : A g) (h1 : g ≠ 0) : ¬(g =m A 0) := by
   apply Or.elim (ne_zero_not_leftEnd_or_not_rightEnd h1) <;> intro h2
-  · exact not_MisereEq_of_not_MisereGe (leftEnd_not_leftEnd_not_ge trivial IGame.leftMoves_zero h2)
+  · exact not_MisereEq_of_not_MisereGe (leftEnd_not_leftEnd_not_ge (EqZeroIdentical.has_T_g_zero h0) IGame.leftMoves_zero h2)
   · intro h3
-    exact (not_MisereEq_of_not_MisereGe (rightEnd_not_rightEnd_not_ge IGame.rightMoves_zero h2)) (MisereEq_symm h3)
+    have h4 : A (-g) := EqZeroIdentical.toHasNeg.has_neg g h0
+    have h5 : A (leftEnd_not_leftEnd_not_ge.auxT (-g) (-0)) := by
+      rw [neg_zero]
+      exact EqZeroIdentical.has_T_g_zero h4
+    exact (not_MisereEq_of_not_MisereGe (HasNeg.rightEnd_not_rightEnd_not_ge h5 IGame.rightMoves_zero h2)) (MisereEq_symm h3)
 
-alias corollary6_7 := Transfinite.ne_zero_not_eq_zero
-
-theorem Short.ne_zero_not_eq_zero {g : IGame} [IGame.Short g] (h1 : g ≠ 0) : ¬(g =m IGame.Short 0) := by
-  apply Or.elim (ne_zero_not_leftEnd_or_not_rightEnd h1) <;> intro h2
-  · exact not_MisereEq_of_not_MisereGe (leftEnd_not_leftEnd_not_ge instShortAuxT IGame.leftMoves_zero h2)
-  · intro h3
-    exact (not_MisereEq_of_not_MisereGe (rightEnd_not_rightEnd_not_ge IGame.rightMoves_zero h2)) (MisereEq_symm h3)
-
-theorem Transfinite.eq_zero_iff_identical_zero {g : IGame} : (g =m AnyGame 0 ↔ g = 0) := by
+theorem EqZeroIdentical.eq_zero_iff_identical_zero
+    {A : IGame → Prop} [EqZeroIdentical A] {g : IGame} (h0 : A g) : (g =m A 0 ↔ g = 0) := by
   constructor <;> intro h1
   · by_contra h2
-    have h3 := ne_zero_not_eq_zero h2
+    have h3 := ne_zero_not_eq_zero h0 h2
     exact h3 h1
   · rw [h1]
     intro _
     exact congrFun rfl
 
-theorem Short.eq_zero_iff_identical_zero {g : IGame} [IGame.Short g] : (g =m IGame.Short 0 ↔ g = 0) := by
-  constructor <;> intro h1
-  · by_contra h2
-    have h3 := ne_zero_not_eq_zero h2
-    exact h3 h1
-  · rw [h1]
-    intro _
-    exact congrFun rfl
+theorem Transfinite.eq_zero_iff_identical_zero {g : IGame}
+    : (g =m AnyGame 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero trivial
 
-theorem MisereGe_antisymm {A : IGame → Prop} {g h : IGame} (h1 : g ≥m A h) (h2 : h ≥m A g) : g =m A h :=
-  fun x h3 => PartialOrder.le_antisymm (MisereOutcome (g + x)) (MisereOutcome (h + x)) (h2 x h3) (h1 x h3)
+theorem Short.eq_zero_iff_identical_zero {g : IGame} [h1 : IGame.Short g]
+    : (g =m IGame.Short 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero h1
