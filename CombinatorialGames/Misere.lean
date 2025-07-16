@@ -102,7 +102,7 @@ theorem Outcome.lt_iff_le_not_le' (a b : Outcome) :
 instance : Preorder Outcome where
   le_refl _ := Or.symm (Or.inr rfl)
   le_trans := Outcome.le_trans'
-  lt_iff_le_not_le := Outcome.lt_iff_le_not_le'
+  lt_iff_le_not_ge := Outcome.lt_iff_le_not_le'
 
 theorem Outcome.le_antisymm' (a b : Outcome) (hab : Outcome.le' a b) (hba : Outcome.le' b a) :
     a = b := by
@@ -156,7 +156,7 @@ theorem Outcome.L_ge (o : Outcome) : Outcome.L ≥ o := by
 theorem Outcome.ge_P_ge_N_eq_L {o : Outcome} (hp : o ≥ Outcome.P) (hn : o ≥ Outcome.N)
     : o = Outcome.L := by
   cases o
-  all_goals simp [Outcome.le', Outcome.lt', hp, hn, LE.le] at *
+  all_goals simp [Outcome.le', Outcome.lt', LE.le] at *
 
 theorem leftEnd_rightEnd_eq_zero {g : IGame} (hl : IsLeftEnd g) (hr : IsRightEnd g) : g = 0 := by
   rw [IGame.zero_def]
@@ -227,8 +227,8 @@ theorem adjoint_not_rightEnd (g : IGame) : ¬(IsRightEnd (g°)) := by
 theorem adjoint_not_leftEnd (g : IGame) : ¬(IsLeftEnd (g°)) := by
   unfold Adjoint
   unfold IsLeftEnd
-  by_cases h1 : g = 0 <;> simp [h1, IsLeftEnd, IsRightEnd]
-  by_cases h2 : g.leftMoves = ∅ <;> by_cases h3 : g.rightMoves = ∅ <;> simp [IsLeftEnd, h2, h3]
+  by_cases h1 : g = 0 <;> simp [h1, IsRightEnd]
+  by_cases h2 : g.leftMoves = ∅ <;> by_cases h3 : g.rightMoves = ∅ <;> simp [h2, h3]
   exact h1 (leftEnd_rightEnd_eq_zero h2 h3)
 
 theorem leftEnd_leftWinsGoingFirst {g : IGame} (h1 : IsLeftEnd g) : LeftWinsGoingFirst g := by
@@ -242,7 +242,7 @@ theorem rightEnd_rightWinsGoingFirst {g : IGame} (h : IsRightEnd g) : RightWinsG
 theorem ne_zero_not_leftEnd_or_not_rightEnd {g : IGame} (h1 : g ≠ 0) :
     ¬(IsLeftEnd g) ∨ ¬(IsRightEnd g) := by
   by_contra h2
-  simp only [ne_eq, not_or, not_not] at h2
+  simp only [not_or, not_not] at h2
   obtain ⟨h2, h3⟩ := h2
   exact h1 (leftEnd_rightEnd_eq_zero h2 h3)
 
@@ -260,20 +260,20 @@ theorem not_rightWinsGoingFirst_ge_P {g : IGame} (h1 : ¬RightWinsGoingFirst g) 
     MisereOutcome g ≥ Outcome.P := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome RightOutcome
   cases h2 : LeftOutcome g
-  all_goals simp [h1, h2, Outcome.L_ge]
+  all_goals simp only [h1, reduceIte, ge_iff_le, le_refl, Outcome.L_ge]
 
 theorem not_leftWinsGoingFirst_le_P {g : IGame} (h1 : ¬LeftWinsGoingFirst g) :
     MisereOutcome g ≤ Outcome.P := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome
   cases h2 : LeftOutcome g <;> cases h3 : RightOutcome g
-  all_goals simp [h1, h2, h3, Outcome.ge_R]
+  all_goals simp only [h1, reduceIte, Outcome.ge_R, le_refl]
 
 theorem outcome_eq_P_leftWinsGoingFirst {g gl : IGame} (h1 : gl ∈ g.leftMoves)
     (h2 : MisereOutcome gl = Outcome.P) : LeftWinsGoingFirst g := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome RightOutcome at h2
   by_cases h3 : LeftWinsGoingFirst gl
     <;> by_cases h4 : RightWinsGoingFirst gl
-    <;> simp [h3, h4] at h2
+    <;> simp only [h3, h4, reduceIte, reduceCtorEq] at h2
   rw [LeftWinsGoingFirst_def]
   exact Or.inr (by use gl)
 
@@ -282,7 +282,7 @@ theorem outcome_eq_P_rightWinsGoingFirst {g gr : IGame} (h1 : gr ∈ g.rightMove
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome RightOutcome at h2
   by_cases h3 : RightWinsGoingFirst gr
     <;> by_cases h4 : LeftWinsGoingFirst gr
-    <;> simp [h3, h4] at h2
+    <;> simp only [h3, h4, reduceIte, reduceCtorEq] at h2
   rw [RightWinsGoingFirst_def]
   exact Or.inr (by use gr)
 
@@ -306,13 +306,13 @@ theorem rightWinsGoingFirst_outcome_le_N {g : IGame} (h1 : RightWinsGoingFirst g
     MisereOutcome g ≤ Outcome.N := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome RightOutcome
   cases h2 : LeftOutcome g
-  all_goals simp [h1, h2, Outcome.L_ge, Outcome.ge_R]
+  all_goals simp only [h1, reduceIte, le_refl, Outcome.ge_R]
 
 theorem leftWinsGoingFirst_outcome_ge_N {g : IGame} (h1 : LeftWinsGoingFirst g) :
     MisereOutcome g ≥ Outcome.N := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome
   cases h2 : RightOutcome g
-  all_goals simp [h1, h2, Outcome.L_ge, Outcome.ge_R]
+  all_goals simp only [h1, reduceIte, ge_iff_le, le_refl, Outcome.L_ge]
 
 theorem outcome_eq_P_not_leftWinsGoingFirst {g : IGame} (h1 : MisereOutcome g = Outcome.P) :
     ¬LeftWinsGoingFirst g := by
@@ -328,11 +328,11 @@ theorem outcome_eq_P_not_rightWinsGoingFirst {g : IGame} (h1 : MisereOutcome g =
 
 theorem mem_leftMoves_ne_zero {g gl : IGame} (h1 : gl ∈ g.leftMoves) : g ≠ 0 := by
   intro h2
-  simp [h2] at h1
+  simp only [h2, IGame.leftMoves_zero, Set.mem_empty_iff_false] at h1
 
 theorem mem_rightMoves_ne_zero {g gr : IGame} (h1 : gr ∈ g.rightMoves) : g ≠ 0 := by
   intro h2
-  simp [h2] at h1
+  simp only [h2, IGame.rightMoves_zero, Set.mem_empty_iff_false] at h1
 
 theorem mem_leftMoves_mem_adjoint_rightMoves {g gl : IGame} (h1 : gl ∈ g.leftMoves) :
     gl° ∈ (g°).rightMoves := by
@@ -620,7 +620,7 @@ theorem leftOutcome_neg_eq_rightOutcome_conjugate (g : IGame) :
     unfold RightOutcome
     have h3 : ¬RightWinsGoingFirst g := by
       unfold RightWinsGoingFirst
-      simp only [not_forall, Classical.not_imp, not_or, not_exists, not_and, not_not]
+      simp only [not_forall, not_or, not_exists, not_not]
       have h3 : ¬IsRightEnd g := by
         intro h3
         unfold IsLeftEnd at h1
@@ -686,7 +686,7 @@ theorem rightOutcome_neg_eq_leftOutcome_conjugate (g : IGame) :
     unfold LeftOutcome
     have h3 : ¬LeftWinsGoingFirst g := by
       unfold LeftWinsGoingFirst
-      simp only [not_forall, Classical.not_imp, not_or, not_exists, not_and, not_not]
+      simp only [not_forall, not_or, not_exists, not_not]
       have h3 : ¬IsLeftEnd g := by
         intro h3
         unfold IsRightEnd at h1
@@ -740,8 +740,8 @@ theorem outcome_ge_conjugate_le {g h : IGame} (h1 : MisereOutcome g ≥ MisereOu
   cases h2 : MisereOutcome g
     <;> cases h3 : MisereOutcome h
     <;> unfold Outcome.Conjugate
-    <;> simp [h1, h2, h3, instLEOutcome, Outcome.le', Outcome.lt']
-    <;> simp [h2, h3] at h1
+    <;> simp [instLEOutcome, Outcome.le', Outcome.lt']
+    <;> simp only [h2, h3, ge_iff_le] at h1
     <;> absurd h1
     <;> simp [instLEOutcome, Outcome.le', Outcome.lt']
 
@@ -869,7 +869,7 @@ theorem leftEnd_not_leftEnd_not_ge {A : IGame → Prop} {g h : IGame}
     apply not_rightWinsGoingFirst_ge_P
     unfold RightWinsGoingFirst
     simp only [IGame.rightMoves_add, Set.union_empty_iff, Set.image_eq_empty, Set.mem_union,
-               Set.mem_image, not_or, not_and, not_exists, not_not]
+               Set.mem_image, not_or, not_and, not_not]
     apply And.intro (fun _ => by
       simp only [t, IGame.rightMoves_ofSets, Set.singleton_ne_empty, not_false_eq_true])
     intro x h3
@@ -883,7 +883,7 @@ theorem leftEnd_not_leftEnd_not_ge {A : IGame → Prop} {g h : IGame}
       -- since (by the assumption on H) both components are Left ends
       apply add_leftEnd_LeftWinsGoingFirst h1
       simp only [t, IGame.rightMoves_ofSets, Set.mem_singleton_iff] at h3
-      simp only [t, h3, IGame.leftMoves_ofSets, IsLeftEnd]
+      simp only [h3, IGame.leftMoves_ofSets, IsLeftEnd]
   -- Next consider G + T
   have h4 : MisereOutcome (g + t) ≤ Outcome.N := by
     apply rightWinsGoingFirst_outcome_le_N
