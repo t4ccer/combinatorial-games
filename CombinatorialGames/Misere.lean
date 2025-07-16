@@ -27,8 +27,8 @@ decreasing_by igame_wf
 
 end
 
-theorem LeftWinsGoingFirst_def {g : IGame}
-    : LeftWinsGoingFirst g ↔ (IsLeftEnd g ∨ (∃ gl ∈ g.leftMoves, ¬RightWinsGoingFirst gl)) := by
+theorem LeftWinsGoingFirst_def {g : IGame} :
+    LeftWinsGoingFirst g ↔ (IsLeftEnd g ∨ (∃ gl ∈ g.leftMoves, ¬RightWinsGoingFirst gl)) := by
   constructor <;> intro h1
   · simp only [LeftWinsGoingFirst, not_forall] at h1
     apply Or.elim h1 <;> intro h2
@@ -40,8 +40,8 @@ theorem LeftWinsGoingFirst_def {g : IGame}
     · exact Or.inl h2
     · exact Or.inr (bex_def.mpr h2)
 
-theorem RightWinsGoingFirst_def {g : IGame}
-    : RightWinsGoingFirst g ↔ (IsRightEnd g ∨ (∃ gr ∈ g.rightMoves, ¬LeftWinsGoingFirst gr)) := by
+theorem RightWinsGoingFirst_def {g : IGame} :
+    RightWinsGoingFirst g ↔ (IsRightEnd g ∨ (∃ gr ∈ g.rightMoves, ¬LeftWinsGoingFirst gr)) := by
   constructor <;> intro h1
   · simp only [RightWinsGoingFirst, not_forall] at h1
     apply Or.elim h1 <;> intro h2
@@ -86,13 +86,15 @@ def Outcome.le' (lhs rhs : Outcome) : Prop := (lhs = rhs) ∨ (Outcome.lt' lhs r
 instance : LE Outcome where
   le := Outcome.le'
 
-theorem Outcome.le_trans' (a b c : Outcome) (hab : Outcome.le' a b) (hbc : Outcome.le' b c) : Outcome.le' a c := by
+theorem Outcome.le_trans' (a b c : Outcome) (hab : Outcome.le' a b) (hbc : Outcome.le' b c) :
+    Outcome.le' a c := by
   cases a
   all_goals cases b
   all_goals cases c
   all_goals simp [Outcome.le', Outcome.lt'] at *
 
-theorem Outcome.lt_iff_le_not_le' (a b : Outcome) : Outcome.lt' a b ↔ Outcome.le' a b ∧ ¬(Outcome.le' b a) := by
+theorem Outcome.lt_iff_le_not_le' (a b : Outcome) :
+    Outcome.lt' a b ↔ Outcome.le' a b ∧ ¬(Outcome.le' b a) := by
   cases a
   all_goals cases b
   all_goals simp [Outcome.le', Outcome.lt'] at *
@@ -102,7 +104,8 @@ instance : Preorder Outcome where
   le_trans := Outcome.le_trans'
   lt_iff_le_not_le := Outcome.lt_iff_le_not_le'
 
-theorem Outcome.le_antisymm' (a b : Outcome) (hab : Outcome.le' a b) (hba : Outcome.le' b a) : a = b := by
+theorem Outcome.le_antisymm' (a b : Outcome) (hab : Outcome.le' a b) (hba : Outcome.le' b a) :
+    a = b := by
   cases a
   all_goals cases b
   all_goals simp [Outcome.le', Outcome.lt'] at *
@@ -135,7 +138,7 @@ macro_rules | `($x ≥m $u $y) => `(MisereGe $u $x $y)
 
 recommended_spelling "ge" for "≥m" in [MisereGe]
 
-/-- No constraints on game form. You can prove `AnyGame x` with `trivial` -/
+/-- No constraints (transfinite) on game form. You can prove `AnyGame x` with `trivial` -/
 def AnyGame (_ : IGame) := True
 
 theorem Outcome.ge_R (o : Outcome) : o ≥ Outcome.R := by
@@ -150,7 +153,8 @@ theorem Outcome.L_ge (o : Outcome) : Outcome.L ≥ o := by
   cases o
   all_goals simp [instLEOutcome, Outcome.le', Outcome.lt']
 
-theorem Outcome.ge_P_ge_N_eq_L {o : Outcome} (hp : o ≥ Outcome.P) (hn : o ≥ Outcome.N) : o = Outcome.L := by
+theorem Outcome.ge_P_ge_N_eq_L {o : Outcome} (hp : o ≥ Outcome.P) (hn : o ≥ Outcome.N)
+    : o = Outcome.L := by
   cases o
   all_goals simp [Outcome.le', Outcome.lt', hp, hn, LE.le] at *
 
@@ -163,16 +167,17 @@ theorem leftEnd_rightEnd_eq_zero {g : IGame} (hl : IsLeftEnd g) (hr : IsRightEnd
   · simp only [hr, Set.mem_empty_iff_false, IGame.rightMoves_ofSets]
 
 theorem proposition6_1 (g h : IGame) :
-  (g ≥m AnyGame h) ↔ (∀ (x : IGame),
-  (MisereOutcome (h + x) ≥ Outcome.P → MisereOutcome (g + x) ≥ Outcome.P) ∧
-  (MisereOutcome (h + x) ≥ Outcome.N → MisereOutcome (g + x) ≥ Outcome.N)) := by
+    (g ≥m AnyGame h)
+    ↔ (∀ (x : IGame),
+      (MisereOutcome (h + x) ≥ Outcome.P → MisereOutcome (g + x) ≥ Outcome.P)
+      ∧ (MisereOutcome (h + x) ≥ Outcome.N → MisereOutcome (g + x) ≥ Outcome.N)) := by
   constructor <;> intro h1
   · -- => is immediate
     intro x
     unfold MisereGe at h1
     constructor <;> intro h2
-    · exact Preorder.le_trans Outcome.P (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
-    · exact Preorder.le_trans Outcome.N (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
+    · exact Preorder.le_trans _ (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
+    · exact Preorder.le_trans _ (MisereOutcome (h + x)) (MisereOutcome (g + x)) h2 (h1 x trivial)
   · -- For the converse, we must show that o(G + X) > o(H + X), for all X.
     unfold MisereGe
     intro x _
@@ -202,7 +207,8 @@ noncomputable def Adjoint (g : IGame) : IGame :=
   if g = (0 : IGame) then ⋆
   else if IsLeftEnd g then {Set.range fun gr : g.rightMoves => Adjoint gr|{0}}ᴵ
   else if IsRightEnd g then {{0}|Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ
-  else {Set.range fun gr : g.rightMoves => Adjoint gr|Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ
+  else { Set.range fun gr : g.rightMoves => Adjoint gr
+       | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ
 termination_by g
 decreasing_by igame_wf
 
@@ -233,13 +239,15 @@ theorem rightEnd_rightWinsGoingFirst {g : IGame} (h : IsRightEnd g) : RightWinsG
   unfold RightWinsGoingFirst
   exact Or.symm (Or.inr h)
 
-theorem ne_zero_not_leftEnd_or_not_rightEnd {g : IGame} (h1 : g ≠ 0) : ¬(IsLeftEnd g) ∨ ¬(IsRightEnd g) := by
+theorem ne_zero_not_leftEnd_or_not_rightEnd {g : IGame} (h1 : g ≠ 0) :
+    ¬(IsLeftEnd g) ∨ ¬(IsRightEnd g) := by
   by_contra h2
   simp only [ne_eq, not_or, not_not] at h2
   obtain ⟨h2, h3⟩ := h2
   exact h1 (leftEnd_rightEnd_eq_zero h2 h3)
 
-theorem not_MisereEq_of_not_MisereGe {A : IGame → Prop} {g h : IGame} (h1 : ¬(g ≥m A h)) : ¬(g =m A h) := by
+theorem not_MisereEq_of_not_MisereGe {A : IGame → Prop} {g h : IGame} (h1 : ¬(g ≥m A h)) :
+    ¬(g =m A h) := by
   simp only [MisereGe, ge_iff_le, not_forall] at h1
   obtain ⟨x, ⟨h1, h2⟩⟩ := h1
   simp only [MisereEq, not_forall]
@@ -248,60 +256,72 @@ theorem not_MisereEq_of_not_MisereGe {A : IGame → Prop} {g h : IGame} (h1 : ¬
   exact Ne.symm (ne_of_not_le h2)
 
 /-- `o(G) ≥ P` is equivalent to "Left can win playing second on `G`" -/
-theorem not_rightWinsGoingFirst_ge_P {g : IGame} (h1 : ¬RightWinsGoingFirst g) : MisereOutcome g ≥ Outcome.P := by
+theorem not_rightWinsGoingFirst_ge_P {g : IGame} (h1 : ¬RightWinsGoingFirst g) :
+    MisereOutcome g ≥ Outcome.P := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome RightOutcome
   cases h2 : LeftOutcome g
   all_goals simp [h1, h2, Outcome.L_ge]
 
-theorem not_leftWinsGoingFirst_le_P {g : IGame} (h1 : ¬LeftWinsGoingFirst g) : MisereOutcome g ≤ Outcome.P := by
+theorem not_leftWinsGoingFirst_le_P {g : IGame} (h1 : ¬LeftWinsGoingFirst g) :
+    MisereOutcome g ≤ Outcome.P := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome
   cases h2 : LeftOutcome g <;> cases h3 : RightOutcome g
   all_goals simp [h1, h2, h3, Outcome.ge_R]
 
-theorem outcome_eq_P_leftWinsGoingFirst {g gl : IGame} (h1 : gl ∈ g.leftMoves) (h2 : MisereOutcome gl = Outcome.P)
-    : LeftWinsGoingFirst g := by
+theorem outcome_eq_P_leftWinsGoingFirst {g gl : IGame} (h1 : gl ∈ g.leftMoves)
+    (h2 : MisereOutcome gl = Outcome.P) : LeftWinsGoingFirst g := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome RightOutcome at h2
-  by_cases h3 : LeftWinsGoingFirst gl <;> by_cases h4 : RightWinsGoingFirst gl <;> simp [h3, h4] at h2
+  by_cases h3 : LeftWinsGoingFirst gl
+    <;> by_cases h4 : RightWinsGoingFirst gl
+    <;> simp [h3, h4] at h2
   rw [LeftWinsGoingFirst_def]
   exact Or.inr (by use gl)
 
-theorem outcome_eq_P_rightWinsGoingFirst {g gr : IGame} (h1 : gr ∈ g.rightMoves) (h2 : MisereOutcome gr = Outcome.P)
-    : RightWinsGoingFirst g := by
+theorem outcome_eq_P_rightWinsGoingFirst {g gr : IGame} (h1 : gr ∈ g.rightMoves)
+    (h2 : MisereOutcome gr = Outcome.P) : RightWinsGoingFirst g := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome RightOutcome at h2
-  by_cases h3 : RightWinsGoingFirst gr <;> by_cases h4 : LeftWinsGoingFirst gr <;> simp [h3, h4] at h2
+  by_cases h3 : RightWinsGoingFirst gr
+    <;> by_cases h4 : LeftWinsGoingFirst gr
+    <;> simp [h3, h4] at h2
   rw [RightWinsGoingFirst_def]
   exact Or.inr (by use gr)
 
-theorem add_leftEnd_leftEnd {g h : IGame} (h1 : IsLeftEnd g) (h2 : IsLeftEnd h) : IsLeftEnd (g + h) := by
+theorem add_leftEnd_leftEnd {g h : IGame} (h1 : IsLeftEnd g) (h2 : IsLeftEnd h) :
+    IsLeftEnd (g + h) := by
   unfold IsLeftEnd at h1 h2
   simp [h1, h2, IsLeftEnd]
 
-theorem add_rightEnd_rightEnd {g h : IGame} (h1 : IsRightEnd g) (h2 : IsRightEnd h) : IsRightEnd (g + h) := by
+theorem add_rightEnd_rightEnd {g h : IGame} (h1 : IsRightEnd g) (h2 : IsRightEnd h) :
+    IsRightEnd (g + h) := by
   unfold IsRightEnd at h1 h2
   simp [h1, h2, IsRightEnd]
 
-theorem add_leftEnd_LeftWinsGoingFirst {g h : IGame} (h1 : IsLeftEnd g) (h2 : IsLeftEnd h) : LeftWinsGoingFirst (g + h) :=
-  leftEnd_leftWinsGoingFirst (add_leftEnd_leftEnd h1 h2)
+theorem add_leftEnd_LeftWinsGoingFirst {g h : IGame} (h1 : IsLeftEnd g) (h2 : IsLeftEnd h) :
+    LeftWinsGoingFirst (g + h) := leftEnd_leftWinsGoingFirst (add_leftEnd_leftEnd h1 h2)
 
-theorem add_rightEnd_RightWinsGoingFirst {g h : IGame} (h1 : IsRightEnd g) (h2 : IsRightEnd h) : RightWinsGoingFirst (g + h) :=
-  rightEnd_rightWinsGoingFirst (add_rightEnd_rightEnd h1 h2)
+theorem add_rightEnd_RightWinsGoingFirst {g h : IGame} (h1 : IsRightEnd g) (h2 : IsRightEnd h) :
+    RightWinsGoingFirst (g + h) := rightEnd_rightWinsGoingFirst (add_rightEnd_rightEnd h1 h2)
 
-theorem rightWinsGoingFirst_outcome_le_N {g : IGame} (h1 : RightWinsGoingFirst g) : MisereOutcome g ≤ Outcome.N := by
+theorem rightWinsGoingFirst_outcome_le_N {g : IGame} (h1 : RightWinsGoingFirst g) :
+    MisereOutcome g ≤ Outcome.N := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome RightOutcome
   cases h2 : LeftOutcome g
   all_goals simp [h1, h2, Outcome.L_ge, Outcome.ge_R]
 
-theorem leftWinsGoingFirst_outcome_ge_N {g : IGame} (h1 : LeftWinsGoingFirst g) : MisereOutcome g ≥ Outcome.N := by
+theorem leftWinsGoingFirst_outcome_ge_N {g : IGame} (h1 : LeftWinsGoingFirst g) :
+    MisereOutcome g ≥ Outcome.N := by
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome
   cases h2 : RightOutcome g
   all_goals simp [h1, h2, Outcome.L_ge, Outcome.ge_R]
 
-theorem outcome_eq_P_not_leftWinsGoingFirst {g : IGame} (h1 : MisereOutcome g = Outcome.P) : ¬LeftWinsGoingFirst g := by
+theorem outcome_eq_P_not_leftWinsGoingFirst {g : IGame} (h1 : MisereOutcome g = Outcome.P) :
+    ¬LeftWinsGoingFirst g := by
   intro h2
   unfold MisereOutcome PlayerOutcomesToGameOutcome LeftOutcome at h1
   cases h3 : RightOutcome g <;> simp only [h2, h3, reduceIte, reduceCtorEq] at h1
 
-theorem outcome_eq_P_not_rightWinsGoingFirst {g : IGame} (h1 : MisereOutcome g = Outcome.P) : ¬RightWinsGoingFirst g := by
+theorem outcome_eq_P_not_rightWinsGoingFirst {g : IGame} (h1 : MisereOutcome g = Outcome.P) :
+    ¬RightWinsGoingFirst g := by
   intro h2
   unfold MisereOutcome PlayerOutcomesToGameOutcome RightOutcome at h1
   cases h3 : LeftOutcome g <;> simp only [h2, h3, reduceIte, reduceCtorEq] at h1
@@ -314,7 +334,8 @@ theorem mem_rightMoves_ne_zero {g gr : IGame} (h1 : gr ∈ g.rightMoves) : g ≠
   intro h2
   simp [h2] at h1
 
-theorem mem_leftMoves_mem_adjoint_rightMoves {g gl : IGame} (h1 : gl ∈ g.leftMoves) : gl° ∈ (g°).rightMoves := by
+theorem mem_leftMoves_mem_adjoint_rightMoves {g gl : IGame} (h1 : gl ∈ g.leftMoves) :
+    gl° ∈ (g°).rightMoves := by
   rw [Adjoint, IsLeftEnd, IsRightEnd]
   have h2 : g ≠ 0 := mem_leftMoves_ne_zero h1
   by_cases h3 : g.leftMoves = ∅ <;> by_cases h4 : g.rightMoves = ∅ <;> simp [*]
@@ -323,7 +344,8 @@ theorem mem_leftMoves_mem_adjoint_rightMoves {g gl : IGame} (h1 : gl ∈ g.leftM
   · use gl
   · use gl
 
-theorem mem_rightMoves_mem_adjoint_leftMoves {g gr : IGame} (h1 : gr ∈ g.rightMoves) : gr° ∈ (g°).leftMoves := by
+theorem mem_rightMoves_mem_adjoint_leftMoves {g gr : IGame} (h1 : gr ∈ g.rightMoves) :
+    gr° ∈ (g°).leftMoves := by
   rw [Adjoint, IsLeftEnd, IsRightEnd]
   have h2 : g ≠ 0 := mem_rightMoves_ne_zero h1
   by_cases h3 : g.leftMoves = ∅ <;> by_cases h4 : g.rightMoves = ∅ <;> simp [*]
@@ -340,9 +362,8 @@ theorem not_rightEnd_ne_zero {g : IGame} (h1 : ¬(IsRightEnd g)) : g ≠ 0 := by
   intro h2
   simp only [h2, IsRightEnd, IGame.rightMoves_zero, not_true_eq_false] at h1
 
-theorem mem_rightMoves_adjoint_exists_leftMoves {g gr : IGame}
-  (h1 : gr ∈ g°.rightMoves) (h2 : ¬(IsLeftEnd g))
-    : ∃ gl ∈ g.leftMoves, gr = gl° := by
+theorem mem_rightMoves_adjoint_exists_leftMoves {g gr : IGame} (h1 : gr ∈ g°.rightMoves)
+    (h2 : ¬(IsLeftEnd g)) : ∃ gl ∈ g.leftMoves, gr = gl° := by
   unfold Adjoint IsLeftEnd IsRightEnd at h1
   unfold IsLeftEnd at h2
   have h3 : g ≠ 0 := not_leftEnd_ne_zero h2
@@ -355,9 +376,8 @@ theorem mem_rightMoves_adjoint_exists_leftMoves {g gr : IGame}
     apply And.intro h3
     exact Eq.symm h4
 
-theorem mem_leftMoves_adjoint_exists_rightMoves {g gl : IGame}
-  (h1 : gl ∈ g°.leftMoves) (h2 : ¬(IsRightEnd g))
-    : ∃ gr ∈ g.rightMoves, gl = gr° := by
+theorem mem_leftMoves_adjoint_exists_rightMoves {g gl : IGame} (h1 : gl ∈ g°.leftMoves)
+    (h2 : ¬(IsRightEnd g)) : ∃ gr ∈ g.rightMoves, gl = gr° := by
   unfold Adjoint IsLeftEnd IsRightEnd at h1
   unfold IsRightEnd at h2
   have h3 : g ≠ 0 := not_rightEnd_ne_zero h2
@@ -370,7 +390,8 @@ theorem mem_leftMoves_adjoint_exists_rightMoves {g gl : IGame}
     apply And.intro h3
     exact Eq.symm h4
 
-theorem mem_adjoint_rightMoves_leftEnd_eq_zero {g gr : IGame} (h1 : gr ∈ g°.rightMoves) (h2 : IsLeftEnd g) : gr = 0 := by
+theorem mem_adjoint_rightMoves_leftEnd_eq_zero {g gr : IGame} (h1 : gr ∈ g°.rightMoves)
+    (h2 : IsLeftEnd g) : gr = 0 := by
   unfold Adjoint at h1
   unfold IsLeftEnd at h2
   by_cases h3 : g.rightMoves = ∅
@@ -383,7 +404,8 @@ theorem mem_adjoint_rightMoves_leftEnd_eq_zero {g gr : IGame} (h1 : gr ∈ g°.r
     simp only [h4, reduceIte, IsLeftEnd, h2, IGame.rightMoves_ofSets, Set.mem_singleton_iff] at h1
     exact h1
 
-theorem mem_adjoint_leftMoves_rightEnd_eq_zero {g gl : IGame} (h1 : gl ∈ g°.leftMoves) (h2 : IsRightEnd g) : gl = 0 := by
+theorem mem_adjoint_leftMoves_rightEnd_eq_zero {g gl : IGame} (h1 : gl ∈ g°.leftMoves)
+    (h2 : IsRightEnd g) : gl = 0 := by
   unfold Adjoint at h1
   unfold IsRightEnd at h2
   by_cases h3 : g.leftMoves = ∅
@@ -393,7 +415,8 @@ theorem mem_adjoint_leftMoves_rightEnd_eq_zero {g gl : IGame} (h1 : gl ∈ g°.l
   · have h4 : g ≠ 0 := by
       intro h6
       simp only [h6, IGame.leftMoves_zero, not_true_eq_false] at h3
-    simp only [h2, h3, h4, reduceIte, IsLeftEnd, IsRightEnd, IGame.leftMoves_ofSets, Set.mem_singleton_iff] at h1
+    simp only [h2, h3, h4, reduceIte, IsLeftEnd, IsRightEnd,
+               IGame.leftMoves_ofSets, Set.mem_singleton_iff] at h1
     exact h1
 
 theorem outcome_add_adjoint_eq_P (g : IGame) : MisereOutcome (g + g°) = Outcome.P := by
@@ -403,7 +426,8 @@ theorem outcome_add_adjoint_eq_P (g : IGame) : MisereOutcome (g + g°) = Outcome
     unfold RightOutcome
     have h1 : ¬(RightWinsGoingFirst (g + g°)) := by
       rw [RightWinsGoingFirst_def]
-      simp only [IGame.rightMoves_add, Set.mem_union, Set.mem_image, not_or, not_exists, not_and, not_not]
+      simp only [IGame.rightMoves_add, Set.mem_union, Set.mem_image, not_or, not_exists, not_and,
+                 not_not]
       constructor
       · -- Now G + G° cannot be a Right end, since the definition of
         -- G° ensures that it has at least one Right option
@@ -440,7 +464,8 @@ theorem outcome_add_adjoint_eq_P (g : IGame) : MisereOutcome (g + g°) = Outcome
     unfold LeftOutcome
     have h2 : ¬(LeftWinsGoingFirst (g + g°)) := by
       rw [LeftWinsGoingFirst_def]
-      simp only [IGame.leftMoves_add, Set.mem_union, Set.mem_image, not_or, not_exists, not_and, not_not]
+      simp only [IGame.leftMoves_add, Set.mem_union, Set.mem_image, not_or, not_exists, not_and,
+                 not_not]
       constructor
       · intro h1
         unfold IsLeftEnd at h1
@@ -498,7 +523,8 @@ theorem rightEnd_neg_iff_leftEnd {g : IGame} : IsRightEnd (-g) ↔ IsLeftEnd g :
     simp only [IsRightEnd, IGame.rightMoves_neg, Set.neg_eq_empty] at *
     exact h1
 
-theorem leftOutcome_eq_R_iff_not_leftWinsFirst {g : IGame} : (LeftOutcome g = PlayerOutcome.R) ↔ ¬LeftWinsGoingFirst g := by
+theorem leftOutcome_eq_R_iff_not_leftWinsFirst {g : IGame} :
+    (LeftOutcome g = PlayerOutcome.R) ↔ ¬LeftWinsGoingFirst g := by
   constructor <;> intro h1
   · unfold LeftOutcome at h1
     intro h2
@@ -506,7 +532,8 @@ theorem leftOutcome_eq_R_iff_not_leftWinsFirst {g : IGame} : (LeftOutcome g = Pl
   · unfold LeftOutcome
     simp only [h1, reduceIte]
 
-theorem rightOutcome_eq_L_iff_not_rightWinsFirst {g : IGame} : (RightOutcome g = PlayerOutcome.L) ↔ ¬RightWinsGoingFirst g := by
+theorem rightOutcome_eq_L_iff_not_rightWinsFirst {g : IGame} :
+    (RightOutcome g = PlayerOutcome.L) ↔ ¬RightWinsGoingFirst g := by
   constructor <;> intro h1
   · unfold RightOutcome at h1
     intro h2
@@ -514,10 +541,12 @@ theorem rightOutcome_eq_L_iff_not_rightWinsFirst {g : IGame} : (RightOutcome g =
   · unfold RightOutcome
     simp only [h1, reduceIte]
 
-theorem playerOutcome_eq_iff_conjugate_eq {a b : PlayerOutcome} : (a = b) ↔ (a.Conjugate = b.Conjugate) := by
+theorem playerOutcome_eq_iff_conjugate_eq {a b : PlayerOutcome} :
+    (a = b) ↔ (a.Conjugate = b.Conjugate) := by
   cases a <;> cases b <;> simp only [reduceCtorEq, PlayerOutcome.Conjugate]
 
-theorem neg_leftWinsFirst_iff_rightWinsFirst (g : IGame) : (LeftWinsGoingFirst (-g)) ↔ (RightWinsGoingFirst g) := by
+theorem neg_leftWinsFirst_iff_rightWinsFirst (g : IGame) :
+    (LeftWinsGoingFirst (-g)) ↔ (RightWinsGoingFirst g) := by
   constructor <;> intro h1
   · rw [LeftWinsGoingFirst_def] at h1
     apply Or.elim h1 <;> intro h1
@@ -558,7 +587,8 @@ decreasing_by
 
 mutual
 
-theorem leftOutcome_neg_eq_rightOutcome_conjugate (g : IGame) : LeftOutcome (-g) = (RightOutcome g).Conjugate := by
+theorem leftOutcome_neg_eq_rightOutcome_conjugate (g : IGame) :
+    LeftOutcome (-g) = (RightOutcome g).Conjugate := by
   unfold LeftOutcome
   rw [LeftWinsGoingFirst_def, IGame.leftMoves_neg]
   split_ifs with h1
@@ -623,7 +653,8 @@ theorem leftOutcome_neg_eq_rightOutcome_conjugate (g : IGame) : LeftOutcome (-g)
 termination_by g
 decreasing_by igame_wf
 
-theorem rightOutcome_neg_eq_leftOutcome_conjugate (g : IGame) : RightOutcome (-g) = (LeftOutcome g).Conjugate := by
+theorem rightOutcome_neg_eq_leftOutcome_conjugate (g : IGame) :
+    RightOutcome (-g) = (LeftOutcome g).Conjugate := by
   unfold RightOutcome
   rw [RightWinsGoingFirst_def, IGame.rightMoves_neg]
   split_ifs with h1
@@ -687,19 +718,21 @@ decreasing_by igame_wf
 
 end
 
-theorem conjugate_of_conjugates {g : IGame}
-    : PlayerOutcomesToGameOutcome (RightOutcome g).Conjugate (LeftOutcome g).Conjugate
-      = (MisereOutcome g).Conjugate := by
+theorem conjugate_of_conjugates {g : IGame} :
+    PlayerOutcomesToGameOutcome (RightOutcome g).Conjugate (LeftOutcome g).Conjugate
+    = (MisereOutcome g).Conjugate := by
   cases h1 : RightOutcome g <;> cases h2 : LeftOutcome g
   all_goals simp only [h1, h2, PlayerOutcomesToGameOutcome, PlayerOutcome.Conjugate,
                        Outcome.Conjugate, MisereOutcome]
 
-theorem outcome_conjugate_eq_outcome_neg {g : IGame} : (MisereOutcome g).Conjugate = MisereOutcome (-g) := by
+theorem outcome_conjugate_eq_outcome_neg {g : IGame} :
+    (MisereOutcome g).Conjugate = MisereOutcome (-g) := by
   unfold Outcome.Conjugate
   cases h1 : MisereOutcome g
   all_goals
   · unfold MisereOutcome
-    rw [rightOutcome_neg_eq_leftOutcome_conjugate, leftOutcome_neg_eq_rightOutcome_conjugate, conjugate_of_conjugates, h1]
+    rw [rightOutcome_neg_eq_leftOutcome_conjugate, leftOutcome_neg_eq_rightOutcome_conjugate,
+        conjugate_of_conjugates, h1]
     rfl
 
 theorem outcome_ge_conjugate_le {g h : IGame} (h1 : MisereOutcome g ≥ MisereOutcome h) :
@@ -727,8 +760,8 @@ instance : HasNeg AnyGame where
 instance : HasNeg IGame.Short where
   has_neg g _ := IGame.Short.neg g
 
-theorem HasNeg.not_ge_neg_iff.aux {A : IGame → Prop} [HasNeg A] {g h : IGame} (h1 : g ≥m A h)
-    : (-h) ≥m A (-g) := by
+theorem HasNeg.not_ge_neg_iff.aux {A : IGame → Prop} [HasNeg A] {g h : IGame} (h1 : g ≥m A h) :
+    (-h) ≥m A (-g) := by
   unfold MisereGe at *
   intro x h0
   have h2 := h1 (-x)
@@ -744,8 +777,8 @@ theorem HasNeg.not_ge_neg_iff.aux {A : IGame → Prop} [HasNeg A] {g h : IGame} 
   apply outcome_ge_conjugate_le
   exact h2 (HasNeg.has_neg x h0)
 
-theorem HasNeg.neg_ge_neg_iff {A : IGame → Prop} [HasNeg A] {g h : IGame}
-    : ((-h) ≥m A (-g) ↔ g ≥m A h) := by
+theorem HasNeg.neg_ge_neg_iff {A : IGame → Prop} [HasNeg A] {g h : IGame} :
+    (-h) ≥m A (-g) ↔ g ≥m A h := by
   constructor <;> intro h1
   · have h2 := not_ge_neg_iff.aux h1
     simp only [neg_neg] at h2
@@ -795,7 +828,8 @@ termination_by g
 decreasing_by all_goals igame_wf
 
 noncomputable def leftEnd_not_leftEnd_not_ge.auxT (g h : IGame) : IGame :=
-  {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
+  { Set.range fun hr : h.rightMoves => Adjoint hr
+  | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
 
 instance {g h : IGame} [h1 : IGame.Short g] [h2 : IGame.Short h]
     : IGame.Short (leftEnd_not_leftEnd_not_ge.auxT g h) := by
@@ -824,10 +858,11 @@ instance {g h : IGame} [h1 : IGame.Short g] [h2 : IGame.Short h]
       have h5 : IGame.Short gl := IGame.Short.of_mem_leftMoves h4
       exact short_adjoint gl
 
-theorem leftEnd_not_leftEnd_not_ge
-    {A : IGame → Prop} {g h : IGame} (h0 : A (leftEnd_not_leftEnd_not_ge.auxT g h))
-    (h1 : IsLeftEnd h) (h2 : ¬(IsLeftEnd g)) : ¬(g ≥m A h) := by
-  let t := {Set.range fun hr : h.rightMoves => Adjoint hr | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
+theorem leftEnd_not_leftEnd_not_ge {A : IGame → Prop} {g h : IGame}
+    (h0 : A (leftEnd_not_leftEnd_not_ge.auxT g h)) (h1 : IsLeftEnd h)
+    (h2 : ¬(IsLeftEnd g)) : ¬(g ≥m A h) := by
+  let t := { Set.range fun hr : h.rightMoves => Adjoint hr
+           | { {∅ | Set.range fun gl : g.leftMoves => Adjoint gl}ᴵ } }ᴵ
 
   -- First consider H + T
   have h3 : MisereOutcome (h + t) ≥ Outcome.P := by
@@ -886,10 +921,9 @@ theorem leftEnd_not_leftEnd_not_ge
 
 alias theorem6_6 := leftEnd_not_leftEnd_not_ge
 
-theorem HasNeg.rightEnd_not_rightEnd_not_ge
-    {A : IGame → Prop} [HasNeg A] {g h : IGame}
-    (h0 : A (leftEnd_not_leftEnd_not_ge.auxT (-g) (-h))) (h1 : IsRightEnd h) (h2 : ¬(IsRightEnd g))
-    : ¬(h ≥m A g) := by
+theorem HasNeg.rightEnd_not_rightEnd_not_ge {A : IGame → Prop} [HasNeg A] {g h : IGame}
+    (h0 : A (leftEnd_not_leftEnd_not_ge.auxT (-g) (-h))) (h1 : IsRightEnd h)
+    (h2 : ¬(IsRightEnd g)) : ¬(h ≥m A g) := by
   unfold IsRightEnd at h1 h2
   have h3 : IsLeftEnd (-h) := leftEnd_neg_iff_rightEnd.mpr h1
   have h4 : ¬(IsLeftEnd (-g)) := leftEnd_neg_iff_rightEnd.not.mpr h2
@@ -902,8 +936,8 @@ theorem MisereEq_symm {A : IGame → Prop} {g h : IGame} (h1 : g =m A h) : h =m 
   have h3 := h1 x h2
   exact Eq.symm h3
 
-theorem MisereGe_antisymm {A : IGame → Prop} {g h : IGame} (h1 : g ≥m A h) (h2 : h ≥m A g)
-    : g =m A h := fun x h3 =>
+theorem MisereGe_antisymm {A : IGame → Prop} {g h : IGame} (h1 : g ≥m A h) (h2 : h ≥m A g) :
+    g =m A h := fun x h3 =>
   PartialOrder.le_antisymm (MisereOutcome (g + x)) (MisereOutcome (h + x)) (h2 x h3) (h1 x h3)
 
 class EqZeroIdentical (A : IGame → Prop) extends (HasNeg A) where
@@ -915,29 +949,31 @@ instance : EqZeroIdentical AnyGame where
 instance : EqZeroIdentical IGame.Short where
   has_T_g_zero _ := instShortAuxT
 
-theorem EqZeroIdentical.ne_zero_not_eq_zero
-    {A : IGame → Prop} [EqZeroIdentical A] {g : IGame} (h0 : A g) (h1 : g ≠ 0) : ¬(g =m A 0) := by
+theorem EqZeroIdentical.ne_zero_not_eq_zero {A : IGame → Prop} [EqZeroIdentical A] {g : IGame}
+    (h0 : A g) (h1 : g ≠ 0) : ¬(g =m A 0) := by
   apply Or.elim (ne_zero_not_leftEnd_or_not_rightEnd h1) <;> intro h2
-  · exact not_MisereEq_of_not_MisereGe (leftEnd_not_leftEnd_not_ge (EqZeroIdentical.has_T_g_zero h0) IGame.leftMoves_zero h2)
+  · have h3 := leftEnd_not_leftEnd_not_ge (has_T_g_zero h0) IGame.leftMoves_zero h2
+    exact not_MisereEq_of_not_MisereGe h3
   · intro h3
     have h4 : A (-g) := EqZeroIdentical.toHasNeg.has_neg g h0
     have h5 : A (leftEnd_not_leftEnd_not_ge.auxT (-g) (-0)) := by
       rw [neg_zero]
-      exact EqZeroIdentical.has_T_g_zero h4
-    exact (not_MisereEq_of_not_MisereGe (HasNeg.rightEnd_not_rightEnd_not_ge h5 IGame.rightMoves_zero h2)) (MisereEq_symm h3)
+      exact has_T_g_zero h4
+    exact not_MisereEq_of_not_MisereGe
+            (HasNeg.rightEnd_not_rightEnd_not_ge h5 IGame.rightMoves_zero h2)
+            (MisereEq_symm h3)
 
-theorem EqZeroIdentical.eq_zero_iff_identical_zero
-    {A : IGame → Prop} [EqZeroIdentical A] {g : IGame} (h0 : A g) : (g =m A 0 ↔ g = 0) := by
-  constructor <;> intro h1
-  · by_contra h2
-    have h3 := ne_zero_not_eq_zero h0 h2
-    exact h3 h1
-  · rw [h1]
+theorem EqZeroIdentical.eq_zero_iff_identical_zero {A : IGame → Prop} [EqZeroIdentical A]
+    {g : IGame} (h0 : A g) : (g =m A 0 ↔ g = 0) := by
+  constructor <;> intro h2
+  · by_contra h3
+    exact ne_zero_not_eq_zero h0 h3 h2
+  · rw [h2]
     intro _
     exact congrFun rfl
 
-theorem Transfinite.eq_zero_iff_identical_zero {g : IGame}
-    : (g =m AnyGame 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero trivial
+theorem Transfinite.eq_zero_iff_identical_zero {g : IGame} :
+    (g =m AnyGame 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero trivial
 
-theorem Short.eq_zero_iff_identical_zero {g : IGame} [h1 : IGame.Short g]
-    : (g =m IGame.Short 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero h1
+theorem Short.eq_zero_iff_identical_zero {g : IGame} [h1 : IGame.Short g] :
+    (g =m IGame.Short 0 ↔ g = 0) := EqZeroIdentical.eq_zero_iff_identical_zero h1
